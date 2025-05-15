@@ -3,11 +3,13 @@
 @tailwind utilities;
 
 @layer utilities {
-  .primary {
-    background: black;
+
+  .bg-navbar {
+    background-color: #000000C9
   }
 
-  .bg-login {
-    background-color: #94a3b8;
+  .bg-color {
+    background-color: #F2F3F4;
   }
-};
+
+}

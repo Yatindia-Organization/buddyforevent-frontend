@@ -7,16 +7,16 @@ export default function MainLayout() {
         <div className="w-screen h-screen flex flex-col overflow-hidden">
 
             {/* Top Bar */}
-            <div className="flex items-center justify-between h-16 bg-white px-4 shadow z-10">
+            <div className="flex items-center justify-between h-16 bg-color px-4 shadow z-10">
                 <div className="flex items-center gap-4">
-                    <img src="/images/logo-compony.svg" alt="Company Logo" className="h-8" />
-                    <h1 className="text-lg font-semibold">Buddy For Events</h1>
+                    <img src="/images/logo-compony.svg" alt="Company Logo" className="h-12" />
+                    <h1 className="text-[24px] font-semibold text-[#0B3051]">Buddy For Events</h1>
                 </div>
                 <div className="flex items-center gap-4">
-                    <img src="/svg/notification.svg" alt="notification" className="h-5" />
-                    <div className="flex items-center gap-2">
+                    <img src="/svg/notification.svg" alt="notification" className="h-6" />
+                    <div className="flex items-center gap-3">
                         <span>Welcome User</span>
-                        <img src="/svg/profile.svg" alt="profile" className="h-8 rounded-full" />
+                        <img src="/svg/profile.svg" alt="profile" className="h-10 rounded-full" />
                     </div>
                 </div>
             </div>

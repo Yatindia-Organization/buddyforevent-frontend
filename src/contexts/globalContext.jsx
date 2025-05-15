@@ -7,7 +7,7 @@ export function useGlobalInfo() {
 }
 
 export function GlobalProvider({ children }) {
-    const [loginFlow, setLoginFLow] = useState(false);
+    const [loginFlow, setLoginFLow] = useState(true);
 
     return (<GlobalContext.Provider
         value={{
