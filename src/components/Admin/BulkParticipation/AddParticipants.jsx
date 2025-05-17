@@ -93,13 +93,39 @@ export default function AddParticipants() {
     };
 
     return (
-        <Box sx={{ maxWidth: 800, mx: 'auto', mt: 4 }}>
-            <Typography variant="h5" gutterBottom>
-                Add Participants
+        <Box sx={{ maxWidth: 1000}}>
+            <Typography variant="h4" gutterBottom sx={{ fontWeight: 'bold', color: '#5D5C8D' }}>
+                Bulk Registration
+            </Typography>
+            <Typography variant="body2" sx={{ mb: 2 }}>
+                Issue tickets to your Participants without asking them to register online.
+            </Typography>
+            <Typography variant="caption" sx={{ color: 'red', mb: 3, display: 'block' }}>
+                Please note that the participants will be receiving email, sms and WhatsApp messages once after the registration
             </Typography>
 
-            <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={2} sx={{ mb: 3 }}>
-                <label htmlFor="upload-excel">
+            <Paper elevation={3} sx={{ p: 4, mt: 4 }}>
+
+                <Typography variant="body2" sx={{ mb: 1 }}>
+                    NOTE: Please find the sample csv file to be downloaded
+                </Typography>
+                <Button onClick={handleDownloadTemplate} variant="text" sx={{ textTransform: 'none', mb: 2 }}>
+                    Download sample CSV
+                </Button>
+                <Typography variant="caption" sx={{ color: 'red', mb: 2, display: 'block' }}>
+                    Please download the sample csv file and upload the same with your data filled
+                </Typography>
+
+                <Box
+                    sx={{
+                        border: '2px dashed #b3b3ff',
+                        borderRadius: 2,
+                        p: 4,
+                        textAlign: 'center',
+                        bgcolor: '#fafafa',
+                        mb: 3
+                    }}
+                >
                     <input
                         accept=".xlsx,.xls"
                         id="upload-excel"
@@ -107,20 +133,41 @@ export default function AddParticipants() {
                         hidden
                         onChange={handleFileUpload}
                     />
-                    <Button
-                        variant="outlined"
-                        component="span"
-                        startIcon={<CloudUploadIcon />}
-                        sx={{ textTransform: 'none' }}
-                    >
-                        Upload Excel File
-                    </Button>
-                </label>
+                    <label htmlFor="upload-excel">
+                        <CloudUploadIcon sx={{ fontSize: 48, color: '#b3b3ff' }} />
+                        <Typography
+                            variant="body1"
+                            component="div"
+                            sx={{ cursor: 'pointer', color: '#007bff', textDecoration: 'underline' }}
+                        >
+                            Click to upload File
+                        </Typography>
+                        <Typography variant="body2" sx={{ mt: 1 }}>
+                            or drag and drop
+                        </Typography>
+                        <Typography variant="caption" sx={{ display: 'block', mt: 1 }}>
+                            CSV less than 1MB
+                        </Typography>
+                    </label>
+                </Box>
 
-                <Button variant="contained" color="primary" onClick={handleDownloadTemplate}>
-                    Download Template
+
+                <Typography variant="caption" sx={{ display: 'block', mt: 1 }}>
+                    NOTE: Maximum file size is 1 MB
+                </Typography>
+
+            </Paper>
+
+
+            <Stack direction="row" spacing={2} justifyContent="flex-end" sx={{ mt: 3 }}>
+                <Button variant="outlined" color="inherit">
+                    Cancel
+                </Button>
+                <Button variant="contained" color="success" onClick={() => showToast('Simulated Upload')}>
+                    Upload CSV
                 </Button>
             </Stack>
+
 
             {excelData.length > 0 && (
                 <Box>

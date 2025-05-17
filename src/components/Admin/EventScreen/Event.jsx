@@ -1,6 +1,7 @@
 import { Alert, Snackbar } from '@mui/material';
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
+import EventStatsChart from '../../echarts/EventStatsChart';
 
 const API_ROUTE = 'https://your-api-url.com'; // Update to your real API
 
@@ -14,7 +15,7 @@ export default function Event() {
     const [snackbar, setSnackbar] = useState({
         open: false,
         message: '',
-        severity: 'success', 
+        severity: 'success',
     });
 
 
@@ -125,42 +126,145 @@ export default function Event() {
     }
 
     return (
-        <div className="flex flex-col md:flex-row gap-8 p-6">
+        <div className="flex flex-col md:flex-row gap-8">
             {/* LEFT */}
-            <div className="w-full md:w-1/2 space-y-4">
-                <h1 className="text-3xl font-bold">{event.name}</h1>
-                <p className="text-gray-600">{event.description}</p>
-                <p><strong>Start:</strong> {new Date(event.startDate).toLocaleString()}</p>
-                <p><strong>End:</strong> {new Date(event.endDate).toLocaleString()}</p>
-                <p><strong>Type:</strong> {event.eventType}</p>
-                <p><strong>Food Tracking:</strong> {event.foodTracking ? 'Enabled' : 'Disabled'}</p>
-                <p><strong>Gift Tracking:</strong> {event.giftTracking ? 'Enabled' : 'Disabled'}</p>
-            </div>
-
-            {/* RIGHT */}
-            <div className="w-full md:w-1/2 space-y-4">
+            <div className="w-full md:w-1/2 space-y-6">
                 <img
                     src={event.coverImage}
                     alt="Cover"
-                    className={`w-full object-cover rounded ${getImageHeight()}`}
+                    className={`h-[30vw] object-cover rounded ${getImageHeight()}`}
                 />
 
+                <p className=' flex justify-center text-[14px] text-[#C11215] font-semibold'>Please enter a picture of size 1280 x 720 px</p>
+
+                <div className='flex justify-between items-center'>
+                    <div className='flex items-center gap-[0.8vw]'>
+                        <img className='w-[2vw]' src="/svg/edit.svg" alt="icons" />
+                        <p className='text-[16px] text-[#140088] font-medium'>Edit Event</p>
+                    </div>
+                    <div className='flex items-center gap-[0.8vw]'>
+                        <img className='w-[2vw]' src="/svg/edit-design.svg" alt="icons" />
+                        <p className='text-[16px] text-[#140088] font-medium'>Edit Design</p>
+                    </div>
+                    <div className='flex items-center gap-[0.8vw]'>
+                        <img className='w-[2vw]' src="/svg/eye.svg" alt="icons" />
+                        <p className='text-[16px] text-[#140088] font-medium'>Preview</p>
+                    </div>
+                </div>
+
+                <div className='flex justify-between items-center'>
+                    <a href="live-count" className='text-[#2A8BF2] text-[24px] underline'>View Live Count</a>
+                    <a href="live-count" className='text-[#2A8BF2] text-[24px] underline'>Event FeedBack</a>
+                    <a href="live-count" className='text-[#2A8BF2] text-[24px] underline'>Add Live Poll</a>
+                </div>
+
+                <div className='p-3 flex flex-col gap-[1vw] rounded-[15px] bg-white'>
+                    <div className='flex justify-between items-center'>
+                        <p className='text-[#000000] text-[14px] font-medium'>Live Update URL</p>
+                        <a href="" className='w-[16vw] text-[13px] text-[#2A8BF2] underline'>https://in.explara.com/e/abc-event-oejqyfepdf92ob5</a>
+                        <div className='flex flex-col justify-between items-center'>
+                            <img src="/svg/copy.svg" alt="image" />
+                            <p className='text-[#000000] text-[14px] font-medium'>COPY</p>
+                        </div>
+                        <div className='flex flex-col justify-between items-center'>
+                            <img src="/svg/logo-whatsapp.svg" alt="image" />
+                            <p className='text-[#000000] text-[14px] font-medium'>SHARE</p>
+                        </div>
+                    </div>
+                    <div className='flex justify-between items-center'>
+                        <p className='text-[#000000] text-[14px] font-medium'>EVENT FEEDBACK URL</p>
+                        <a href="" className='w-[16vw] text-[13px] text-[#2A8BF2] underline'>https://in.explara.com/e/abc-event-oejqyfepdf92ob5</a>
+                        <div className='flex flex-col justify-between items-center'>
+                            <img src="/svg/copy.svg" alt="image" />
+                            <p className='text-[#000000] text-[14px] font-medium'>COPY</p>
+                        </div>
+                        <div className='flex flex-col justify-between items-center'>
+                            <img src="/svg/logo-whatsapp.svg" alt="image" />
+                            <p className='text-[#000000] text-[14px] font-medium'>SHARE</p>
+                        </div>
+                    </div>
+                    <div className='flex justify-between items-center'>
+                        <p className='text-[#000000] text-[14px] font-medium'>LIVE POLL URL</p>
+                        <a href="" className='w-[16vw] text-[13px] text-[#2A8BF2] underline'>https://in.explara.com/e/abc-event-oejqyfepdf92ob5</a>
+                        <div className='flex flex-col justify-between items-center'>
+                            <img src="/svg/copy.svg" alt="image" />
+                            <p className='text-[#000000] text-[14px] font-medium'>COPY</p>
+                        </div>
+                        <div className='flex flex-col justify-between items-center'>
+                            <img src="/svg/logo-whatsapp.svg" alt="image" />
+                            <p className='text-[#000000] text-[14px] font-medium'>SHARE</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            {/* RIGHT */}
+            <div className="w-full md:w-1/2 space-y-8">
+
+                <div className='flex gap-[1vw] *:px-[1.4vw] *:py-[0.4vw] *:text-white *:text-[14px] *:rounded-[10px]'>
+                    <div className='bg-[#419B01]'> PUBLISHED</div>
+                    <div className='bg-[#2C96FF]'> PAUSE EVENT</div>
+                    <div className='bg-[#2C96FF]'> CANCEL EVENT</div>
+                </div>
+
+                <div className='flex justify-between items-center'>
+                    <div className='flex items-center gap-[0.4vw]'>
+                        <p className='text-[16px] text-[#140088]'>EVENT LOGO</p>
+                        <img className='w-[2vw]' src="/svg/edit.svg" alt="image" />
+                    </div>
+                    <div>
+                        <img className='w-[6vw]' src="/images/logo-compony.svg" alt="image" />
+                    </div>
+                </div>
+
+                <div className='p-4 flex flex-col gap-[1vw] rounded-[15px] bg-white text-[#424242] text-[14px]'>
+                    <div>
+                        <p className='text-[#140088] font-medium'>EVENT DESCRIPTION</p>
+                        <p className="">{event.description}</p>
+                    </div>
+                    <div className='flex flex-col gap-[0.8vw]'>
+                        <p className='text-[#140088] font-medium'>SALES OVERVIEW</p>
+                        <div className='flex justify-around items-center'>
+                            <div className='flex flex-col items-center justify-center'>
+                                <p className='text-[#0CA31D]'>23</p>
+                                <p>REGISTERED</p>
+                            </div>
+                            <div className='flex flex-col items-center justify-center'>
+                                <p className='text-[#0CA31D]'>23</p>
+                                <p>GUEST REGISTERED</p>
+                            </div>
+                            <div className='flex flex-col items-center justify-center'>
+                                <p className='text-[#0CA31D]'>23</p>
+                                <p>VIEWS</p>
+                            </div>
+
+                        </div>
+                    </div>
+                    <div className='flex flex-col gap-[0.8vw]'>
+                        <p className='text-[#140088] font-medium'>EVENT OVERVIEW</p>
+                        <div className='ml-[1vw] flex gap-[1vw]'>
+                            <img className='w-[1vw]' src="/svg/location-pin.svg" alt="location-pin" />
+                            <p>CHENNAI</p>
+                        </div>
+                        <div className='ml-[1vw] flex gap-[1vw]'>
+                            <img className='w-[1vw]' src="/svg/calender.svg" alt="calender" />
+                            <p>CHENNAI</p>
+                        </div>
+                        <div className='ml-[1vw] flex gap-[1vw]'>
+                            <img className='w-[1vw]' src="/svg/timer.svg" alt="timer" />
+                            <p>CHENNAI</p>
+                        </div>
+                    </div>
+                </div>
+
                 {/* Size Selector */}
-                <div className="flex items-center gap-2">
-                    <label className="text-sm font-medium">Select Size:</label>
-                    <select
-                        value={imageSize}
-                        onChange={(e) => setImageSize(e.target.value)}
-                        className="border p-1 rounded"
-                    >
-                        <option value="small">Small</option>
-                        <option value="medium">Medium</option>
-                        <option value="large">Large</option>
-                    </select>
+                <div className="">
+                    <EventStatsChart />
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex flex-wrap gap-3">
+                {/* <div className="flex flex-wrap gap-3">
                     <button className="bg-blue-500 text-white px-4 py-2 rounded">Live Count</button>
                     <button className="bg-yellow-500 text-white px-4 py-2 rounded">Feedback Form</button>
                     <button
@@ -169,7 +273,7 @@ export default function Event() {
                     >
                         Create Poll
                     </button>
-                </div>
+                </div> */}
             </div>
 
             {/* MODAL */}

@@ -18,6 +18,10 @@ import ParticipantRegistration from "./components/Admin/ParticipantRegistration/
 import { useGlobalInfo } from "./contexts/globalContext.jsx";
 import AddParticipants from "./components/Admin/BulkParticipation/AddParticipants.jsx";
 import Event from "./components/Admin/EventScreen/Event.jsx";
+import Email from "./components/Admin/Email/Email.jsx";
+import Profile from "./components/profile/Profile.jsx";
+import Report from "./components/Report/Report.jsx";
+import PaymentHistory from "./components/paymentHistory/PaymentHistory.jsx";
 
 function App() {
   const context = useGlobalInfo();
@@ -34,11 +38,13 @@ function App() {
           // Protected Routes (after login)
           <Route path="/" element={<Main />}>
             <Route index element={<Navigate to="dashboard" replace />} />
-            <Route path="dashboard" element={<Dashboard />}>
-              <Route index element={<Navigate to="event-dashboard" replace />} />
-              <Route path="event-dashboard" element={<EventDashboard />} />
+            <Route path="dashboard" element={<Dashboard />} />
+
+            <Route path="/event-dashboard" element={<EventDashboard />} >
+              <Route index element={<Navigate to="event/:id" replace />} />
+              <Route path="event/:id" element={<Event />} />
               <Route path="participant-registration" element={<ParticipantRegistration />} />
-              <Route path="bulk-ticket" element={<div>Bulk Ticket Content</div>} />
+              <Route path="bulk-ticket" element={<AddParticipants />} />
               <Route path="single-registration" element={<div>Single Registration Content</div>} />
               <Route path="view-participants" element={<div>View Participants Content</div>} />
               <Route path="payment-history" element={<div>Payment History Content</div>} />
@@ -48,7 +54,10 @@ function App() {
 
             <Route path="/create-event" element={<CreateEvent />} />
             <Route path="/add-participants" element={<AddParticipants />} />
-            <Route path="/event/:id" element={<Event />} />
+            <Route path="/email" element={<Email />} />
+            <Route path="/report" element={<Report />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/payment" element={<PaymentHistory />} />
 
           </Route>
         ) : (

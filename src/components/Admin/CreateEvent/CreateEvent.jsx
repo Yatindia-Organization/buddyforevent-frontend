@@ -34,6 +34,7 @@ const CreateEvent = () => {
         name: '',
         startDate: null,
         endDate: null,
+        location: "",
         description: '',
         coverImage: null,
         logoImage: null,
@@ -160,39 +161,98 @@ const CreateEvent = () => {
 
 
 
+    // const StyledUploadBox = ({ label, name, multiple = false, fileData }) => {
+    //     const hasFile =
+    //         multiple ? fileData && fileData.length > 0 : fileData instanceof File;
+
+    //     return (
+    //         <label
+    //             style={{
+    //                 width: '100%',
+    //                 border: '2px dashed #ccc',
+    //                 textAlign: 'center',
+    //                 padding: '20px',
+    //                 borderRadius: '8px',
+    //                 cursor: 'pointer',
+    //                 display: 'flex',
+    //                 flexDirection: 'column',
+    //                 aligns: 'center',
+    //                 gap: '10px',
+    //                 backgroundColor: hasFile ? '#e3f2fd' : 'transparent',
+    //                 borderColor: hasFile ? '#2196f3' : '#ccc',
+    //             }}
+    //         >
+    //             <CloudUploadIcon
+    //                 fontSize="large"
+    //                 sx={{ color: hasFile ? '#2196f3' : '#888' }}
+    //             />
+    //             <Typography variant="body2">
+    //                 {hasFile
+    //                     ? multiple
+    //                         ? `${fileData.length} image(s) uploaded`
+    //                         : `Image uploaded: ${fileData.name}`
+    //                     : label}
+    //             </Typography>
+    //             <input
+    //                 type="file"
+    //                 name={name}
+    //                 multiple={multiple}
+    //                 accept="image/*"
+    //                 onChange={handleFileChange}
+    //                 hidden
+    //             />
+    //         </label>
+    //     );
+    // };
+
+
     const StyledUploadBox = ({ label, name, multiple = false, fileData }) => {
-        const hasFile =
-            multiple ? fileData && fileData.length > 0 : fileData instanceof File;
+        const hasFile = multiple
+            ? fileData && fileData.length > 0
+            : fileData instanceof File;
+
+        const inputId = `${name}-upload`;
 
         return (
-            <label
-                style={{
-                    width: '100%',
-                    border: '2px dashed #ccc',
-                    textAlign: 'center',
-                    padding: '20px',
-                    borderRadius: '8px',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    gap: '10px',
-                    backgroundColor: hasFile ? '#e3f2fd' : 'transparent',
-                    borderColor: hasFile ? '#2196f3' : '#ccc',
-                }}
-            >
-                <CloudUploadIcon
-                    fontSize="large"
-                    sx={{ color: hasFile ? '#2196f3' : '#888' }}
-                />
-                <Typography variant="body2">
-                    {hasFile
-                        ? multiple
-                            ? `${fileData.length} image(s) uploaded`
-                            : `Image uploaded: ${fileData.name}`
-                        : label}
-                </Typography>
+            <label htmlFor={inputId} style={{ textDecoration: 'none' }}>
+                <Box
+                    sx={{
+                        border: '2px dashed #ccc',
+                        borderRadius: '12px',
+                        textAlign: 'center',
+                        padding: 3,
+                        cursor: 'pointer',
+                        transition: 'border-color 0.3s',
+                        '&:hover': {
+                            borderColor: '#1976d2',
+                        },
+                    }}
+                >
+                    <CloudUploadIcon sx={{ fontSize: 40, color: '#aaa', mb: 1 }} />
+
+                    <Typography variant="body1" sx={{ color: '#1976d2', display: 'inline' }}>
+                        {label}
+                    </Typography>
+
+                    <Typography variant="body1" sx={{ color: '#555', display: 'inline' }}>
+                        {' '}or drag and drop
+                    </Typography>
+
+                    <Typography variant="caption" display="block" sx={{ mt: 1, color: '#999' }}>
+                        JPG, JPEG, PNG less than 1MB
+                    </Typography>
+
+                    <Typography variant="body2" sx={{ mt: 1, color: '#999' }}>
+                        {hasFile
+                            ? multiple
+                                ? `${fileData.length} image(s) uploaded`
+                                : `Image uploaded: ${fileData.name}`
+                            : label}
+                    </Typography>
+
+                </Box>
                 <input
+                    id={inputId}
                     type="file"
                     name={name}
                     multiple={multiple}
@@ -207,12 +267,15 @@ const CreateEvent = () => {
 
     return (
         <LocalizationProvider dateAdapter={AdapterDateFns}>
-            <Box sx={{ maxWidth: 1100, mx: 'auto', p: 3 }}>
+            <Typography variant="h5" gutterBottom>
+                Create Event
+            </Typography>
+            <Box sx={{ maxWidth: 1000, p: 3, bgcolor: "#fff", borderRadius: "1vw" }}>
                 <Typography variant="h5" gutterBottom>
-                    Create Event
+                    Event Details
                 </Typography>
                 <form onSubmit={handleSubmit}>
-                    <Grid item xs={12} sx={{ mb: 2 }}>
+                    <Grid xs={12} sx={{ mb: 2 }}>
                         <TextField
                             fullWidth
                             label="Event Name *"
@@ -225,7 +288,7 @@ const CreateEvent = () => {
                     </Grid>
 
                     <Grid container spacing={2} sx={{ mb: 2 }}>
-                        <Grid item xs={12} md={6}>
+                        <Grid xs={12} md={6}>
                             <DatePicker
                                 label="Start Date *"
                                 value={formData.startDate}
@@ -243,7 +306,7 @@ const CreateEvent = () => {
                                 )}
                             />
                         </Grid>
-                        <Grid item xs={12} md={6}>
+                        <Grid xs={12} md={6}>
                             <DatePicker
                                 label="End Date *"
                                 value={formData.endDate}
@@ -268,7 +331,7 @@ const CreateEvent = () => {
                         </Grid>
                     </Grid>
 
-                    <Grid item xs={12} sx={{ mb: 2 }}>
+                    <Grid xs={12} sx={{ mb: 2 }}>
                         <TextField
                             fullWidth
                             multiline
@@ -280,15 +343,27 @@ const CreateEvent = () => {
                         />
                     </Grid>
 
+                    <Grid xs={12} sx={{ mb: 2 }}>
+                        <TextField
+                            fullWidth
+                            label="Event Location *"
+                            name="location"
+                            value={formData.location}
+                            onChange={handleChange}
+                            error={!!errors.location}
+                            helperText={errors.location}
+                        />
+                    </Grid>
+
                     <Grid container spacing={2} sx={{ mb: 2 }}>
-                        <Grid item xs={12} md={6}>
+                        <Grid xs={12} md={6}>
                             <StyledUploadBox
                                 label="Upload Cover Image"
                                 name="coverImage"
                                 fileData={formData.coverImage}
                             />
                         </Grid>
-                        <Grid item xs={12} md={6}>
+                        <Grid xs={12} md={6}>
                             <StyledUploadBox
                                 label="Upload Logo Image"
                                 name="logoImage"
@@ -302,9 +377,9 @@ const CreateEvent = () => {
                         </Grid>
                     </Grid>
 
-                    <Grid item xs={12} sx={{ mb: 2 }}>
+                    <Grid xs={12} sx={{ mb: 2 }}>
                         <StyledUploadBox
-                            label="Upload Event Images"
+                            label="Click to upload any Event pictures ( banner )"
                             name="eventImages"
                             multiple
                             fileData={formData.eventImages}
@@ -312,8 +387,9 @@ const CreateEvent = () => {
                     </Grid>
 
 
+
                     <Grid container spacing={2} sx={{ mb: 2 }}>
-                        <Grid item xs={12}>
+                        <Grid xs={12}>
                             <FormLabel component="legend">Event Type</FormLabel>
                             <RadioGroup
                                 row
@@ -332,7 +408,7 @@ const CreateEvent = () => {
                             { label: 'Food Tracking', name: 'foodTracking' },
                             { label: 'Gift Tracking', name: 'giftTracking' },
                         ].map((checkbox, idx) => (
-                            <Grid item xs={12} sm={6} key={idx}>
+                            <Grid xs={12} sm={6} key={idx}>
                                 <FormControlLabel
                                     control={
                                         <Checkbox
@@ -347,7 +423,7 @@ const CreateEvent = () => {
                         ))}
                     </Grid>
 
-                    <Grid item xs={12}>
+                    <Grid xs={12}>
                         <Button variant="contained" color="primary" type="submit" fullWidth>
                             Create Event
                         </Button>
