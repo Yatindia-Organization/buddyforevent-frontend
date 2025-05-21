@@ -1,8 +1,15 @@
 import React from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useNavigate } from 'react-router-dom';
 import NavBar from '../navbar/NavBar';
 
 export default function MainLayout() {
+
+    const navigate = useNavigate();
+
+    const handleProfileIconClick = () => {
+        navigate("/profile");
+    };
+
     return (
         <div className="w-screen h-screen flex flex-col overflow-hidden">
 
@@ -16,7 +23,7 @@ export default function MainLayout() {
                     <img src="/svg/notification.svg" alt="notification" className="h-6" />
                     <div className="flex items-center gap-3">
                         <span>Welcome User</span>
-                        <img src="/svg/profile.svg" alt="profile" className="h-10 rounded-full" />
+                        <img src="/svg/profile.svg" alt="profile" className="h-10 rounded-full cursor-pointer" onClick={() => handleProfileIconClick()} />
                     </div>
                 </div>
             </div>

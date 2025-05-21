@@ -2,8 +2,8 @@ import { Alert, Snackbar } from '@mui/material';
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import EventStatsChart from '../../echarts/EventStatsChart';
+import { API_ROUTE } from '../../../lib/config';
 
-const API_ROUTE = 'https://your-api-url.com'; // Update to your real API
 
 export default function Event() {
     const { id } = useParams();
@@ -21,29 +21,29 @@ export default function Event() {
 
     useEffect(() => {
         const fetchEvent = async () => {
-            // try {
-            //     const res = await fetch(`${API_ROUTE}/api/v1/events/${id}`);
-            //     if (!res.ok) throw new Error('Event not found');
-            //     const data = await res.json();
-            //     setEvent(data);
-            // } catch (err) {
-            //     console.error(err);
-            //     setEvent(null);
-            // } finally {
-            //     setLoading(false);
-            // }
-            setEvent({
-                coverImage: "https://res.cloudinary.com/dovrpnbxe/image/upload/v1746723822/xa9ad9tilpzy8kp6lrd9.jpg",
-                description: "this is the event description ",
-                endDate: "2025-05-10T18:30:00.000Z",
-                eventImages: ["https://res.cloudinary.com/dovrpnbxe/image/upload/v1746723824/nionl9y9u6lwdzwl9xmr.jpg", "https://res.cloudinary.com/dovrpnbxe/image/upload/v1746723824/xauhjqf3qadb4slcyq4a.jpg"],
-                foodTracking: true,
-                giftTracking: true,
-                logoImage: "https://res.cloudinary.com/dovrpnbxe/image/upload/v1746723823/z4zeg4o6axyte0xf3mkz.jpg",
-                name: "event_010",
-                eventType: "public",
-                startDate: "2025-05-08T18:30:00.000Z",
-            });
+            try {
+                const res = await fetch(`${API_ROUTE}/api/v1/event/eventid/${id}`);
+                if (!res.ok) throw new Error('Event not found');
+                const data = await res.json();
+                setEvent(data);
+            } catch (err) {
+                console.error(err);
+                setEvent(null);
+            } finally {
+                setLoading(false);
+            }
+            // setEvent({
+            //     coverImage: "https://res.cloudinary.com/dovrpnbxe/image/upload/v1746723822/xa9ad9tilpzy8kp6lrd9.jpg",
+            //     description: "this is the event description ",
+            //     endDate: "2025-05-10T18:30:00.000Z",
+            //     eventImages: ["https://res.cloudinary.com/dovrpnbxe/image/upload/v1746723824/nionl9y9u6lwdzwl9xmr.jpg", "https://res.cloudinary.com/dovrpnbxe/image/upload/v1746723824/xauhjqf3qadb4slcyq4a.jpg"],
+            //     foodTracking: true,
+            //     giftTracking: true,
+            //     logoImage: "https://res.cloudinary.com/dovrpnbxe/image/upload/v1746723823/z4zeg4o6axyte0xf3mkz.jpg",
+            //     name: "event_010",
+            //     eventType: "public",
+            //     startDate: "2025-05-08T18:30:00.000Z",
+            // });
             setLoading(false);
         };
         fetchEvent();
@@ -155,7 +155,7 @@ export default function Event() {
                 <div className='flex justify-between items-center'>
                     <a href="live-count" className='text-[#2A8BF2] text-[24px] underline'>View Live Count</a>
                     <a href="live-count" className='text-[#2A8BF2] text-[24px] underline'>Event FeedBack</a>
-                    <a href="live-count" className='text-[#2A8BF2] text-[24px] underline'>Add Live Poll</a>
+                    <a href="/event-dashboard/create-poll" className='text-[#2A8BF2] text-[24px] underline'>Add Live Poll</a>
                 </div>
 
                 <div className='p-3 flex flex-col gap-[1vw] rounded-[15px] bg-white'>
@@ -202,7 +202,7 @@ export default function Event() {
             {/* RIGHT */}
             <div className="w-full md:w-1/2 space-y-8">
 
-                <div className='flex gap-[1vw] *:px-[1.4vw] *:py-[0.4vw] *:text-white *:text-[14px] *:rounded-[10px]'>
+                <div className='flex gap-[1vw] *:px-[1.4vw] *:py-[0.4vw] *:text-white *:text-[14px] *:rounded-[10px] *:cursor-pointer'>
                     <div className='bg-[#419B01]'> PUBLISHED</div>
                     <div className='bg-[#2C96FF]'> PAUSE EVENT</div>
                     <div className='bg-[#2C96FF]'> CANCEL EVENT</div>
@@ -249,11 +249,11 @@ export default function Event() {
                         </div>
                         <div className='ml-[1vw] flex gap-[1vw]'>
                             <img className='w-[1vw]' src="/svg/calender.svg" alt="calender" />
-                            <p>CHENNAI</p>
+                            <p>Date </p>
                         </div>
                         <div className='ml-[1vw] flex gap-[1vw]'>
                             <img className='w-[1vw]' src="/svg/timer.svg" alt="timer" />
-                            <p>CHENNAI</p>
+                            <p>Time</p>
                         </div>
                     </div>
                 </div>

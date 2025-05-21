@@ -50,6 +50,7 @@ const Dashboard = () => {
             name: "event_010",
             eventType: "public",
             startDate: "2025-05-08T18:30:00.000Z",
+            _id: "681ca8f04321795016589b96"
         },
     ];
 
@@ -75,6 +76,10 @@ const Dashboard = () => {
         // handle delete logic
     };
 
+    const handleClick = (id) => {
+        navigate(`/event-dashboard/event/${id}`)
+    };
+
     const sortedEvents = event.slice().sort(getComparator(order, orderBy));
     const paginatedEvents = sortedEvents.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
@@ -85,37 +90,37 @@ const Dashboard = () => {
                     <div className='w-[4vw] aspect-square flex justify-center items-center  rounded-full bg-[#D1FAE5]'>
                         <img className='w-[2vw]' src="/svg/event-completed.svg" alt="event-completed" />
                     </div>
-                    <p className='text-[#0F172A] font-bold text-[24px]'>Events completed</p>
-                    <p className='text-[#0F172A] font-extrabold text-[20px]'>12</p>
+                    <p className='text-[#0F172A] font-medium text-[24px]'>Events completed</p>
+                    <p className='text-[#0F172A] font-semibold text-[20px]'>12</p>
                 </div>
 
                 <div className='flex flex-col justify-center items-center gap-[0.4vw]'>
                     <div className='w-[4vw] aspect-square flex justify-center items-center  rounded-full bg-[#D6D1FA]'>
                         <img className='w-[2vw]' src="/svg/total-event.svg" alt="event-completed" />
                     </div>
-                    <p className='text-[#0F172A] font-bold text-[24px]'>Total Events</p>
-                    <p className='text-[#0F172A] font-extrabold text-[20px]'>21</p>
+                    <p className='text-[#0F172A] font-medium text-[24px]'>Total Events</p>
+                    <p className='text-[#0F172A] font-semibold text-[20px]'>21</p>
                 </div>
 
                 <div className='flex flex-col justify-center items-center gap-[0.4vw]'>
                     <div className='w-[4vw] aspect-square flex justify-center items-center  rounded-full bg-[#FFDFDF]'>
                         <img className='w-[2vw]' src="/svg/mail-open.svg" alt="event-completed" />
                     </div>
-                    <p className='text-[#0F172A] font-bold text-[24px]'>Total Registration</p>
-                    <p className='text-[#0F172A] font-extrabold text-[20px]'>22</p>
+                    <p className='text-[#0F172A] font-medium text-[24px]'>Total Registration</p>
+                    <p className='text-[#0F172A] font-semibold text-[20px]'>22</p>
                 </div>
 
                 <div className='flex flex-col justify-center items-center gap-[0.4vw]'>
                     <div className='w-[4vw] aspect-square flex justify-center items-center  rounded-full bg-[#F8E5DA]'>
                         <img className='w-[2vw]' src="/svg/eye-off.svg" alt="event-completed" />
                     </div>
-                    <p className='text-[#0F172A] font-bold text-[24px]'>Total Participants</p>
-                    <p className='text-[#0F172A] font-extrabold text-[20px]'>225</p>
+                    <p className='text-[#0F172A] font-medium text-[24px]'>Total Participants</p>
+                    <p className='text-[#0F172A] font-semibold text-[20px]'>225</p>
                 </div>
 
             </div>
             <div>
-                <div className='text-[32px] p-3 font-extrabold text-[#140088]'>
+                <div className='text-[32px] p-3 font-bold text-[#140088]'>
                     Latest Events
                 </div>
 
@@ -155,7 +160,7 @@ const Dashboard = () => {
                                     <TableBody>
                                         {paginatedEvents.map((row, index) => (
                                             <TableRow key={index}>
-                                                <TableCell>{row.name}</TableCell>
+                                                <TableCell onClick={() => handleClick(row._id)} className='cursor-pointer'>{row.name}</TableCell>
                                                 <TableCell>{new Date(row.startDate).toLocaleDateString()}</TableCell>
                                                 <TableCell>{new Date(row.endDate).toLocaleDateString()}</TableCell>
                                                 <TableCell>{row.privateEvent ? 'Yes' : 'No'}</TableCell>

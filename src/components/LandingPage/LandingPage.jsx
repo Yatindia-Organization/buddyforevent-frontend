@@ -3,7 +3,7 @@ import { Outlet } from 'react-router-dom';
 
 export default function LandingPage() {
     return (
-        <div className="w-[100dvw] h-[100dvh] overflow-hidden flex flex-col">
+        <div className="w-[100dvw] h-[100dvh] overflow-hidden flex flex-col bg-color">
             {/* Header */}
             <div className="flex gap-[1vw] p-4 items-center">
                 <img src="/images/logo-compony.svg" alt="Company Logo" className="h-10" />
@@ -18,7 +18,7 @@ export default function LandingPage() {
                 </div>
 
                 {/* Right Side Content */}
-                <div className="w-full max-w-md h-auto rounded-md bg-login">
+                <div className="w-full max-w-md h-auto rounded-md">
                     <Outlet />
                 </div>
             </div>

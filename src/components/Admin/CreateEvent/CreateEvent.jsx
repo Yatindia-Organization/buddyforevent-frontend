@@ -11,7 +11,7 @@ import {
     TextField,
     Typography,
 } from '@mui/material';
-import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
+import { LocalizationProvider, DatePicker, TimePicker } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import { useNavigate } from 'react-router-dom';
@@ -34,6 +34,8 @@ const CreateEvent = () => {
         name: '',
         startDate: null,
         endDate: null,
+        startTime: null,
+        endTime: null,
         location: "",
         description: '',
         coverImage: null,
@@ -43,6 +45,7 @@ const CreateEvent = () => {
         foodTracking: true,
         giftTracking: true,
     });
+
 
     const [errors, setErrors] = useState({});
 
@@ -75,17 +78,21 @@ const CreateEvent = () => {
         });
     };
 
+
     const validate = () => {
-        console.log("validating the form")
         const temp = {};
         const today = new Date();
-        today.setHours(0, 0, 0, 0); // Strip time
+        today.setHours(0, 0, 0, 0); // Normalize time
 
-        if (!formData.name) temp.name = 'Event name is required';
+        if (!formData.name.trim()) temp.name = 'Event name is required';
 
-        if (!formData.coverImage) {
-            temp.coverImage = 'Cover image is required';
-        }
+        if (!formData.location.trim()) temp.location = 'Event location is required';
+
+        if (!formData.description.trim()) temp.description = 'Event description is required';
+
+        if (!formData.coverImage) temp.coverImage = 'Cover image is required';
+
+        if (!formData.logoImage) temp.logoImage = 'Logo image is required';
 
         if (!formData.startDate) {
             temp.startDate = 'Start date is required';
@@ -99,10 +106,34 @@ const CreateEvent = () => {
             temp.endDate = 'End date must be after start date';
         }
 
+        if (!formData.startTime) {
+            temp.startTime = 'Start time is required';
+        }
+
+        if (!formData.endTime) {
+            temp.endTime = 'End time is required';
+        } else if (
+            formData.startDate &&
+            formData.endDate &&
+            new Date(formData.startDate).toDateString() === new Date(formData.endDate).toDateString()
+        ) {
+            const start = new Date(formData.startDate);
+            start.setHours(formData.startTime.getHours(), formData.startTime.getMinutes());
+
+            const end = new Date(formData.endDate);
+            end.setHours(formData.endTime.getHours(), formData.endTime.getMinutes());
+
+            if (end <= start) {
+                temp.endTime = 'End time must be after start time';
+            }
+        }
+
+        if (!formData.eventType) temp.eventType = 'Please select an event type';
+
         setErrors(temp);
-        console.log("validation done", Object.keys(temp).length === 0)
         return Object.keys(temp).length === 0;
     };
+
 
 
     const handleSubmit = async (e) => {
@@ -129,7 +160,10 @@ const CreateEvent = () => {
                 coverImage: coverImageUrl,
                 logoImage: logoImageUrl,
                 eventImages: eventImageUrls,
+                startTime: formData.startTime?.toISOString(),
+                endTime: formData.endTime?.toISOString(),
             };
+
 
             // Submit event data to your backend
             const response = await fetch('https://your-api.com/api/events/create', {
@@ -334,24 +368,62 @@ const CreateEvent = () => {
                     <Grid xs={12} sx={{ mb: 2 }}>
                         <TextField
                             fullWidth
-                            multiline
-                            rows={4}
-                            label="Event Description"
-                            name="description"
-                            value={formData.description}
-                            onChange={handleChange}
-                        />
-                    </Grid>
-
-                    <Grid xs={12} sx={{ mb: 2 }}>
-                        <TextField
-                            fullWidth
                             label="Event Location *"
                             name="location"
                             value={formData.location}
                             onChange={handleChange}
                             error={!!errors.location}
                             helperText={errors.location}
+                        />
+                    </Grid>
+
+                    <Grid container spacing={2} sx={{ mb: 2 }}>
+                        <Grid xs={12} md={6}>
+                            <TimePicker
+                                label="Start Time *"
+                                value={formData.startTime}
+                                onChange={(newValue) =>
+                                    setFormData((prev) => ({ ...prev, startTime: newValue }))
+                                }
+                                renderInput={(params) => (
+                                    <TextField
+                                        {...params}
+                                        fullWidth
+                                        error={!!errors.startTime}
+                                        helperText={errors.startTime}
+                                    />
+                                )}
+                            />
+                        </Grid>
+                        <Grid xs={12} md={6}>
+                            <TimePicker
+                                label="End Time *"
+                                value={formData.endTime}
+                                onChange={(newValue) =>
+                                    setFormData((prev) => ({ ...prev, endTime: newValue }))
+                                }
+                                renderInput={(params) => (
+                                    <TextField
+                                        {...params}
+                                        fullWidth
+                                        error={!!errors.endTime}
+                                        helperText={errors.endTime}
+                                    />
+                                )}
+                            />
+                        </Grid>
+                    </Grid>
+
+
+                    <Grid xs={12} sx={{ mb: 2 }}>
+                        <TextField
+                            fullWidth
+                            multiline
+                            rows={4}
+                            label="Event Description"
+                            name="description"
+                            value={formData.description}
+                            onChange={handleChange}
                         />
                     </Grid>
 
@@ -401,6 +473,13 @@ const CreateEvent = () => {
                                 <FormControlLabel value="private" control={<Radio />} label="Private Event" />
                             </RadioGroup>
                         </Grid>
+                        
+                        {errors.eventType && (
+                            <Typography variant="caption" color="error" sx={{ mt: 1 }}>
+                                {errors.eventType}
+                            </Typography>
+                        )}
+
                     </Grid>
 
                     <Grid container spacing={2}>

@@ -22,6 +22,10 @@ import Email from "./components/Admin/Email/Email.jsx";
 import Profile from "./components/profile/Profile.jsx";
 import Report from "./components/Report/Report.jsx";
 import PaymentHistory from "./components/paymentHistory/PaymentHistory.jsx";
+import SingleParticipation from "./components/Admin/SingleParticipation/SingleParticipation.jsx";
+import Participants from "./components/Admin/Participants/Participants.jsx";
+import Settings from "./components/Admin/Settings/Settings.jsx";
+import CreatePoll from "./components/Admin/Poll/CreatePoll.jsx";
 
 function App() {
   const context = useGlobalInfo();
@@ -29,6 +33,7 @@ function App() {
   console.log(context, "this is context")
 
   const isLoggedIn = context.loginFlow;
+
   console.log(isLoggedIn, "this is LoggedIn")
 
   return (
@@ -45,19 +50,19 @@ function App() {
               <Route path="event/:id" element={<Event />} />
               <Route path="participant-registration" element={<ParticipantRegistration />} />
               <Route path="bulk-ticket" element={<AddParticipants />} />
-              <Route path="single-registration" element={<div>Single Registration Content</div>} />
-              <Route path="view-participants" element={<div>View Participants Content</div>} />
-              <Route path="payment-history" element={<div>Payment History Content</div>} />
-              <Route path="email-message" element={<div>Email/Message Content</div>} />
-              <Route path="reports" element={<div>Reports Content</div>} />
+              <Route path="single-registration" element={<SingleParticipation />} />
+              <Route path="view-participants" element={<Participants />} />
+              <Route path="payment-history" element={<PaymentHistory />} />
+              <Route path="email-message" element={<Email />} />
+              <Route path="reports" element={<Report />} />
+              <Route path="create-poll" element={<CreatePoll />} />
             </Route>
 
             <Route path="/create-event" element={<CreateEvent />} />
             <Route path="/add-participants" element={<AddParticipants />} />
-            <Route path="/email" element={<Email />} />
-            <Route path="/report" element={<Report />} />
             <Route path="/profile" element={<Profile />} />
-            <Route path="/payment" element={<PaymentHistory />} />
+            <Route path="/reports" element={<Report />} />
+            <Route path="/settings" element={<Settings />} />
 
           </Route>
         ) : (
