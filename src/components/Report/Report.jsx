@@ -75,7 +75,7 @@ export default function Report() {
                 <Link href="#" underline="hover" sx={{ fontWeight: 'bold', color: '#0066cc' }}>
                     Event FeedBack
                 </Link>
-                <Link href="#" underline="hover" sx={{ fontWeight: 'bold', color: '#0066cc' }}>
+                <Link href="/event-dashboard/create-poll" underline="hover" sx={{ fontWeight: 'bold', color: '#0066cc' }}>
                     Add Live Poll
                 </Link>
             </Box>

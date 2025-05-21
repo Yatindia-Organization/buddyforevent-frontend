@@ -6,6 +6,7 @@ import ToolboxField from '../ToolboxField/ToolboxField';
 import { getDefaultFieldSchema } from '../../../../lib/config/getDefaultFieldSchema';
 import Snackbar from '@mui/material/Snackbar';
 import Alert from '@mui/material/Alert';
+import { Typography } from '@mui/material';
 
 
 const FIELD_TYPES = [
@@ -31,7 +32,7 @@ export default function FormBuilder() {
     const [snackbar, setSnackbar] = useState({
         open: false,
         message: '',
-        severity: 'error' 
+        severity: 'error'
     });
 
     const handleDropFromToolbox = (e) => {
@@ -86,6 +87,11 @@ export default function FormBuilder() {
 
     return (
         <div className="p-6">
+            {/* note */}
+            <Typography variant="body2" color="#E36A6C" mb={3}>
+                Please note that the participants will be receiving email, SMS, and WhatsApp messages after the registration.
+            </Typography>
+
             {/* Toolbox */}
             <h2 className="text-lg font-bold mb-4">Add New Field</h2>
             <div className="flex gap-2 flex-wrap mb-6">
