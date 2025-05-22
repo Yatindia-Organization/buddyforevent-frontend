@@ -1,8 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
     Box,
-    Button,
-    Typography,
     Table,
     TableBody,
     TableCell,
@@ -18,6 +16,8 @@ import { useNavigate } from 'react-router-dom';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EventStatsChart from '../../echarts/EventStatsChart';
+import { useGlobalInfo } from '../../../contexts/globalContext';
+import { API_ROUTE } from '../../../lib/config';
 
 function descendingComparator(a, b, orderBy) {
     if (b[orderBy] < a[orderBy]) return -1;
@@ -33,26 +33,53 @@ function getComparator(order, orderBy) {
 
 const Dashboard = () => {
     const navigate = useNavigate();
+    const context = useGlobalInfo();
+    const userId = context?.userId || "681bc76f713723b2769a6bf5";
     const [order, setOrder] = useState('asc');
     const [orderBy, setOrderBy] = useState('name');
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(5);
+    const [events, setEvents] = useState([]);
 
-    const event = [
-        {
-            coverImage: "https://res.cloudinary.com/dovrpnbxe/image/upload/v1746723822/xa9ad9tilpzy8kp6lrd9.jpg",
-            description: "this is the event description ",
-            endDate: "2025-05-10T18:30:00.000Z",
-            eventImages: ["https://res.cloudinary.com/dovrpnbxe/image/upload/v1746723824/nionl9y9u6lwdzwl9xmr.jpg", "https://res.cloudinary.com/dovrpnbxe/image/upload/v1746723824/xauhjqf3qadb4slcyq4a.jpg"],
-            foodTracking: true,
-            giftTracking: true,
-            logoImage: "https://res.cloudinary.com/dovrpnbxe/image/upload/v1746723823/z4zeg4o6axyte0xf3mkz.jpg",
-            name: "event_010",
-            eventType: "public",
-            startDate: "2025-05-08T18:30:00.000Z",
-            _id: "681ca8f04321795016589b96"
-        },
-    ];
+    const eventPayload = [{
+        cover_image: "https://res.cloudinary.com/dovrpnbxe/image/upload/v1747848227/cx1sxhgj7qigcsbh61gc.jpg",
+        description: "asdfasdf",
+        end_date: "2025:05:22",
+        end_time: "23:00",
+        event_images: [
+            "https://res.cloudinary.com/dovrpnbxe/image/upload/v1747848228/inpjgb3qysrzvman4cuw.jpg",
+            "https://res.cloudinary.com/dovrpnbxe/image/upload/v1747848229/upjkuudpbge9ocigeh2u.jpg",
+            "https://res.cloudinary.com/dovrpnbxe/image/upload/v1747848229/pbbucoabh47qtt2y6ibt.jpg"
+        ],
+        food_tracking: true,
+        gift_tracking: true,
+        location: "chennai",
+        logo_image: "https://res.cloudinary.com/dovrpnbxe/image/upload/v1747848227/q9baewl0z1k9trnay0zc.jpg",
+        name: "event_102",
+        public_event: true,
+        start_date: "2025:05:22",
+        start_time: "19:00",
+        user: "681bc76f713723b2769a6bf5"
+    }];
+
+    useEffect(() => {
+        if (!userId) return;
+
+        const fetchEvents = async () => {
+            try {
+                const response = await fetch(`${API_ROUTE}/api/v1/event/userid/${userId}`);
+                console.log(response, "this is dashboard")
+                const result = await response.json();
+                setEvents(result?.data || eventPayload);
+            } catch (error) {
+                console.error('Failed to fetch events', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchEvents();
+    }, [userId]);
 
     const handleRequestSort = (property) => {
         const isAsc = orderBy === property && order === 'asc';
@@ -80,7 +107,7 @@ const Dashboard = () => {
         navigate(`/event-dashboard/event/${id}`)
     };
 
-    const sortedEvents = event.slice().sort(getComparator(order, orderBy));
+    const sortedEvents = events.slice().sort(getComparator(order, orderBy));
     const paginatedEvents = sortedEvents.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
     return (
@@ -134,11 +161,11 @@ const Dashboard = () => {
                                             {[
                                                 { id: 'name', label: 'Name' },
                                                 { id: 'startDate', label: 'Start Date' },
-                                                { id: 'endDate', label: 'End Date' },
+                                                { id: 'end_date', label: 'End Date' },
                                                 { id: 'privateEvent', label: 'Private' },
                                                 { id: 'publicEvent', label: 'Public' },
-                                                { id: 'giftTracking', label: 'Gifts' },
-                                                { id: 'foodTracking', label: 'Food' },
+                                                { id: 'gift_tracking', label: 'Gifts' },
+                                                { id: 'food_tracking', label: 'Food' },
                                                 { id: 'actions', label: 'Actions' },
                                             ].map((headCell) => (
                                                 <TableCell key={headCell.id} sortDirection={orderBy === headCell.id ? order : false}>
@@ -162,11 +189,11 @@ const Dashboard = () => {
                                             <TableRow key={index}>
                                                 <TableCell onClick={() => handleClick(row._id)} className='cursor-pointer'>{row.name}</TableCell>
                                                 <TableCell>{new Date(row.startDate).toLocaleDateString()}</TableCell>
-                                                <TableCell>{new Date(row.endDate).toLocaleDateString()}</TableCell>
+                                                <TableCell>{new Date(row.end_date).toLocaleDateString()}</TableCell>
                                                 <TableCell>{row.privateEvent ? 'Yes' : 'No'}</TableCell>
                                                 <TableCell>{row.publicEvent ? 'Yes' : 'No'}</TableCell>
-                                                <TableCell>{row.giftTracking ? 'Yes' : 'No'}</TableCell>
-                                                <TableCell>{row.foodTracking ? 'Yes' : 'No'}</TableCell>
+                                                <TableCell>{row.gift_tracking ? 'Yes' : 'No'}</TableCell>
+                                                <TableCell>{row.food_tracking ? 'Yes' : 'No'}</TableCell>
                                                 <TableCell>
                                                     <IconButton onClick={() => handleEdit(row)}>
                                                         <EditIcon />
@@ -184,7 +211,7 @@ const Dashboard = () => {
                             {/* Pagination */}
                             <TablePagination
                                 component="div"
-                                count={event.length}
+                                count={events.length}
                                 page={page}
                                 onPageChange={handleChangePage}
                                 rowsPerPage={rowsPerPage}

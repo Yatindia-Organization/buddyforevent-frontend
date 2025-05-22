@@ -1,27 +1,19 @@
 import React, { useState } from 'react';
 import {
-    Box,
-    Button,
-    Checkbox,
-    FormControlLabel,
-    FormLabel,
-    Grid,
-    Radio,
-    RadioGroup,
-    TextField,
-    Typography,
+    Box, Button, Checkbox, FormControlLabel, FormLabel, Grid,
+    Radio, RadioGroup, TextField, Typography, Snackbar, Alert
 } from '@mui/material';
 import { LocalizationProvider, DatePicker, TimePicker } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import { useNavigate } from 'react-router-dom';
-import { Snackbar, Alert } from '@mui/material';
 import { uploadToCloudinary } from '../../../lib/utils/cloudinary';
-
+import { useGlobalInfo } from '../../../contexts/globalContext';
+import { API_ROUTE } from '../../../lib/config';
 
 const CreateEvent = () => {
-
     const navigate = useNavigate();
+    const context = useGlobalInfo();
 
     const [snackbar, setSnackbar] = useState({
         open: false,
@@ -29,23 +21,24 @@ const CreateEvent = () => {
         severity: 'success',
     });
 
+    const userId = context.userId || "681bc76f713723b2769a6bf5";
 
     const [formData, setFormData] = useState({
         name: '',
-        startDate: null,
-        endDate: null,
-        startTime: null,
-        endTime: null,
+        start_date: null,
+        end_date: null,
+        start_time: null,
+        end_time: null,
+        user: userId,
         location: "",
         description: '',
-        coverImage: null,
-        logoImage: null,
-        eventImages: [],
-        eventType: null,
-        foodTracking: true,
-        giftTracking: true,
+        cover_image: null,
+        logo_image: null,
+        event_images: [],
+        public_event: null,
+        food_tracking: true,
+        gift_tracking: true,
     });
-
 
     const [errors, setErrors] = useState({});
 
@@ -61,10 +54,10 @@ const CreateEvent = () => {
 
     const handleFileChange = (e) => {
         const { name, files } = e.target;
-        if (name === 'eventImages') {
+        if (name === 'event_images') {
             setFormData((prev) => ({
                 ...prev,
-                eventImages: [...prev.eventImages, ...Array.from(files)],
+                event_images: [...prev.event_images, ...Array.from(files)],
             }));
         } else {
             setFormData((prev) => ({ ...prev, [name]: files[0] }));
@@ -74,108 +67,128 @@ const CreateEvent = () => {
     const handleRadioChange = (event) => {
         setFormData({
             ...formData,
-            eventType: event.target.value,
+            public_event: event.target.value === 'true',
         });
+    };
+
+    const pad = (num) => String(num).padStart(2, '0');
+
+    const formatDate = (date) => {
+        console.log("formdate")
+        const d = new Date(date);
+        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    };
+
+    const formatTime = (date) => {
+        console.log("formdate")
+        const d = new Date(date);
+        return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
     };
 
 
     const validate = () => {
         const temp = {};
         const today = new Date();
-        today.setHours(0, 0, 0, 0); // Normalize time
+        today.setHours(0, 0, 0, 0);
 
         if (!formData.name.trim()) temp.name = 'Event name is required';
-
         if (!formData.location.trim()) temp.location = 'Event location is required';
-
         if (!formData.description.trim()) temp.description = 'Event description is required';
+        if (!formData.cover_image) temp.cover_image = 'Cover image is required';
+        if (!formData.logo_image) temp.logo_image = 'Logo image is required';
 
-        if (!formData.coverImage) temp.coverImage = 'Cover image is required';
-
-        if (!formData.logoImage) temp.logoImage = 'Logo image is required';
-
-        if (!formData.startDate) {
-            temp.startDate = 'Start date is required';
-        } else if (new Date(formData.startDate) <= today) {
-            temp.startDate = 'Start date must be after today';
+        if (!formData.start_date) {
+            temp.start_date = 'Start date is required';
+        } else if (new Date(formData.start_date) <= today) {
+            temp.start_date = 'Start date must be after today';
         }
 
-        if (!formData.endDate) {
-            temp.endDate = 'End date is required';
-        } else if (formData.startDate && new Date(formData.endDate) <= new Date(formData.startDate)) {
-            temp.endDate = 'End date must be after start date';
+        if (!formData.end_date) {
+            temp.end_date = 'End date is required';
+        } else if (formData.start_date && new Date(formData.end_date) <= new Date(formData.start_date)) {
+            temp.end_date = 'End date must be after start date';
         }
 
-        if (!formData.startTime) {
-            temp.startTime = 'Start time is required';
-        }
-
-        if (!formData.endTime) {
-            temp.endTime = 'End time is required';
+        if (!formData.start_time) temp.start_time = 'Start time is required';
+        if (!formData.end_time) {
+            temp.end_time = 'End time is required';
         } else if (
-            formData.startDate &&
-            formData.endDate &&
-            new Date(formData.startDate).toDateString() === new Date(formData.endDate).toDateString()
+            formData.start_date &&
+            formData.end_date &&
+            new Date(formData.start_date).toDateString() === new Date(formData.end_date).toDateString()
         ) {
-            const start = new Date(formData.startDate);
-            start.setHours(formData.startTime.getHours(), formData.startTime.getMinutes());
+            const start = new Date(formData.start_date);
+            start.setHours(formData.start_time.getHours(), formData.start_time.getMinutes());
 
-            const end = new Date(formData.endDate);
-            end.setHours(formData.endTime.getHours(), formData.endTime.getMinutes());
+            const end = new Date(formData.end_date);
+            end.setHours(formData.end_time.getHours(), formData.end_time.getMinutes());
 
             if (end <= start) {
-                temp.endTime = 'End time must be after start time';
+                temp.end_time = 'End time must be after start time';
             }
         }
 
-        if (!formData.eventType) temp.eventType = 'Please select an event type';
+        if (formData.public_event === null) temp.public_event = 'Please select an event type';
 
         setErrors(temp);
         return Object.keys(temp).length === 0;
     };
 
-
-
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!validate()) return;
+
+        console.log("Form Data:", formData);
+
+        if (!validate()) {
+            console.log("failed validation")
+        };
+
+
 
         try {
-            // Upload images first
-            console.log("try");
-            const [coverImageUrl] = formData.coverImage
-                ? await uploadToCloudinary([formData.coverImage])
+            const [coverImageUrl] = formData.cover_image
+                ? await uploadToCloudinary([formData.cover_image])
                 : [''];
-            console.log("coverImageUrl", coverImageUrl);
-            const [logoImageUrl] = formData.logoImage
-                ? await uploadToCloudinary([formData.logoImage])
+
+            const [logoImageUrl] = formData.logo_image
+                ? await uploadToCloudinary([formData.logo_image])
                 : [''];
-            const eventImageUrls = formData.eventImages.length
-                ? await uploadToCloudinary(formData.eventImages)
+
+            const eventImageUrls = formData.event_images.length
+                ? await uploadToCloudinary(formData.event_images)
                 : [];
 
-            // Build final payload
             const finalPayload = {
                 ...formData,
-                coverImage: coverImageUrl,
-                logoImage: logoImageUrl,
-                eventImages: eventImageUrls,
-                startTime: formData.startTime?.toISOString(),
-                endTime: formData.endTime?.toISOString(),
+                cover_image: coverImageUrl,
+                logo_image: logoImageUrl,
+                event_images: eventImageUrls,
+                start_date: formData.start_date ? formatDate(formData.start_date) : null,
+                end_date: formData.end_date ? formatDate(formData.end_date) : null,
+                start_time: formData.start_time ? formatTime(formData.start_time) : null,
+                end_time: formData.end_time ? formatTime(formData.end_time) : null,
+
             };
 
+            console.log("Final Payload:", finalPayload);
 
-            // Submit event data to your backend
-            const response = await fetch('https://your-api.com/api/events/create', {
+            // Submit event data
+            const response = await fetch(`${API_ROUTE}/api/v1/event`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                },
                 body: JSON.stringify(finalPayload),
             });
 
             if (!response.ok) {
                 const errorData = await response.json();
-                throw new Error(errorData.message || 'Event creation failed');
+                const errorMessage = errorData?.message || `Event creation failed with status ${response.status}`;
+                throw new Error(errorMessage);
             }
+
+            const result = await response.json();
+            console.log("Event submitted successfully:", result);
 
             setSnackbar({
                 open: true,
@@ -193,98 +206,45 @@ const CreateEvent = () => {
         }
     };
 
-
-
-    // const StyledUploadBox = ({ label, name, multiple = false, fileData }) => {
-    //     const hasFile =
-    //         multiple ? fileData && fileData.length > 0 : fileData instanceof File;
-
-    //     return (
-    //         <label
-    //             style={{
-    //                 width: '100%',
-    //                 border: '2px dashed #ccc',
-    //                 textAlign: 'center',
-    //                 padding: '20px',
-    //                 borderRadius: '8px',
-    //                 cursor: 'pointer',
-    //                 display: 'flex',
-    //                 flexDirection: 'column',
-    //                 aligns: 'center',
-    //                 gap: '10px',
-    //                 backgroundColor: hasFile ? '#e3f2fd' : 'transparent',
-    //                 borderColor: hasFile ? '#2196f3' : '#ccc',
-    //             }}
-    //         >
-    //             <CloudUploadIcon
-    //                 fontSize="large"
-    //                 sx={{ color: hasFile ? '#2196f3' : '#888' }}
-    //             />
-    //             <Typography variant="body2">
-    //                 {hasFile
-    //                     ? multiple
-    //                         ? `${fileData.length} image(s) uploaded`
-    //                         : `Image uploaded: ${fileData.name}`
-    //                     : label}
-    //             </Typography>
-    //             <input
-    //                 type="file"
-    //                 name={name}
-    //                 multiple={multiple}
-    //                 accept="image/*"
-    //                 onChange={handleFileChange}
-    //                 hidden
-    //             />
-    //         </label>
-    //     );
-    // };
-
-
     const StyledUploadBox = ({ label, name, multiple = false, fileData }) => {
-        const hasFile = multiple
-            ? fileData && fileData.length > 0
-            : fileData instanceof File;
-
+        const hasFile = multiple ? fileData && fileData.length > 0 : fileData instanceof File;
         const inputId = `${name}-upload`;
 
         return (
-            <label htmlFor={inputId} style={{ textDecoration: 'none' }}>
-                <Box
-                    sx={{
-                        border: '2px dashed #ccc',
-                        borderRadius: '12px',
-                        textAlign: 'center',
-                        padding: 3,
-                        cursor: 'pointer',
-                        transition: 'border-color 0.3s',
-                        '&:hover': {
-                            borderColor: '#1976d2',
-                        },
-                    }}
-                >
-                    <CloudUploadIcon sx={{ fontSize: 40, color: '#aaa', mb: 1 }} />
-
-                    <Typography variant="body1" sx={{ color: '#1976d2', display: 'inline' }}>
-                        {label}
-                    </Typography>
-
-                    <Typography variant="body1" sx={{ color: '#555', display: 'inline' }}>
-                        {' '}or drag and drop
-                    </Typography>
-
-                    <Typography variant="caption" display="block" sx={{ mt: 1, color: '#999' }}>
-                        JPG, JPEG, PNG less than 1MB
-                    </Typography>
-
-                    <Typography variant="body2" sx={{ mt: 1, color: '#999' }}>
-                        {hasFile
-                            ? multiple
-                                ? `${fileData.length} image(s) uploaded`
-                                : `Image uploaded: ${fileData.name}`
-                            : label}
-                    </Typography>
-
-                </Box>
+            <>
+                <label htmlFor={inputId} style={{ textDecoration: 'none' }}>
+                    <Box
+                        sx={{
+                            border: '2px dashed #ccc',
+                            borderRadius: '12px',
+                            textAlign: 'center',
+                            padding: 3,
+                            cursor: 'pointer',
+                            transition: 'border-color 0.3s',
+                            '&:hover': {
+                                borderColor: '#1976d2',
+                            },
+                        }}
+                    >
+                        <CloudUploadIcon sx={{ fontSize: 40, color: '#aaa', mb: 1 }} />
+                        <Typography variant="body1" sx={{ color: '#1976d2', display: 'inline' }}>
+                            {label}
+                        </Typography>
+                        <Typography variant="body1" sx={{ color: '#555', display: 'inline' }}>
+                            {' '}or drag and drop
+                        </Typography>
+                        <Typography variant="caption" display="block" sx={{ mt: 1, color: '#999' }}>
+                            JPG, JPEG, PNG less than 1MB
+                        </Typography>
+                        <Typography variant="body2" sx={{ mt: 1, color: '#999' }}>
+                            {hasFile
+                                ? multiple
+                                    ? `${fileData.length} image(s) uploaded`
+                                    : `Image uploaded: ${fileData.name}`
+                                : label}
+                        </Typography>
+                    </Box>
+                </label>
                 <input
                     id={inputId}
                     type="file"
@@ -294,22 +254,25 @@ const CreateEvent = () => {
                     onChange={handleFileChange}
                     hidden
                 />
-            </label>
+                {errors[name] && (
+                    <Typography color="error" variant="caption">
+                        {errors[name]}
+                    </Typography>
+                )}
+            </>
         );
     };
 
-
     return (
         <LocalizationProvider dateAdapter={AdapterDateFns}>
-            <Typography variant="h5" gutterBottom>
-                Create Event
-            </Typography>
+            <Typography variant="h5" gutterBottom>Create Event</Typography>
             <Box sx={{ maxWidth: 1000, p: 3, bgcolor: "#fff", borderRadius: "1vw" }}>
                 <Typography variant="h5" gutterBottom>
                     Event Details
                 </Typography>
+
                 <form onSubmit={handleSubmit}>
-                    <Grid xs={12} sx={{ mb: 2 }}>
+                    <Grid item xs={12} sx={{ mb: 2 }}>
                         <TextField
                             fullWidth
                             label="Event Name *"
@@ -322,30 +285,31 @@ const CreateEvent = () => {
                     </Grid>
 
                     <Grid container spacing={2} sx={{ mb: 2 }}>
-                        <Grid xs={12} md={6}>
+
+                        <Grid item xs={12} md={6}>
                             <DatePicker
                                 label="Start Date *"
-                                value={formData.startDate}
+                                value={formData.start_date}
                                 onChange={(newValue) =>
-                                    setFormData((prev) => ({ ...prev, startDate: newValue }))
+                                    setFormData((prev) => ({ ...prev, start_date: newValue }))
                                 }
                                 minDate={new Date(new Date().setDate(new Date().getDate() + 1))}
                                 renderInput={(params) => (
                                     <TextField
                                         {...params}
                                         fullWidth
-                                        error={!!errors.startDate}
-                                        helperText={errors.startDate}
+                                        error={!!errors.start_date}
+                                        helperText={errors.start_date}
                                     />
                                 )}
                             />
                         </Grid>
-                        <Grid xs={12} md={6}>
+                        <Grid item xs={12} md={6}>
                             <DatePicker
                                 label="End Date *"
-                                value={formData.endDate}
+                                value={formData.end_date}
                                 onChange={(newValue) =>
-                                    setFormData((prev) => ({ ...prev, endDate: newValue }))
+                                    setFormData((prev) => ({ ...prev, end_date: newValue }))
                                 }
                                 minDate={
                                     formData.startDate
@@ -356,16 +320,16 @@ const CreateEvent = () => {
                                     <TextField
                                         {...params}
                                         fullWidth
-                                        error={!!errors.endDate}
-                                        helperText={errors.endDate}
+                                        error={!!errors.end_date}
+                                        helperText={errors.end_date}
                                     />
                                 )}
                             />
-
                         </Grid>
+
                     </Grid>
 
-                    <Grid xs={12} sx={{ mb: 2 }}>
+                    <Grid item xs={12} sx={{ mb: 2 }}>
                         <TextField
                             fullWidth
                             label="Event Location *"
@@ -378,137 +342,143 @@ const CreateEvent = () => {
                     </Grid>
 
                     <Grid container spacing={2} sx={{ mb: 2 }}>
-                        <Grid xs={12} md={6}>
+                        <Grid item xs={12} md={6}>
                             <TimePicker
                                 label="Start Time *"
-                                value={formData.startTime}
+                                value={formData.start_time}
                                 onChange={(newValue) =>
-                                    setFormData((prev) => ({ ...prev, startTime: newValue }))
+                                    setFormData((prev) => ({ ...prev, start_time: newValue }))
                                 }
                                 renderInput={(params) => (
                                     <TextField
                                         {...params}
                                         fullWidth
-                                        error={!!errors.startTime}
-                                        helperText={errors.startTime}
+                                        error={!!errors.start_time}
+                                        helperText={errors.start_time}
                                     />
                                 )}
                             />
                         </Grid>
-                        <Grid xs={12} md={6}>
+                        <Grid item xs={12} md={6}>
                             <TimePicker
                                 label="End Time *"
-                                value={formData.endTime}
+                                value={formData.end_time}
                                 onChange={(newValue) =>
-                                    setFormData((prev) => ({ ...prev, endTime: newValue }))
+                                    setFormData((prev) => ({ ...prev, end_time: newValue }))
                                 }
                                 renderInput={(params) => (
                                     <TextField
                                         {...params}
                                         fullWidth
-                                        error={!!errors.endTime}
-                                        helperText={errors.endTime}
+                                        error={!!errors.end_time}
+                                        helperText={errors.end_time}
                                     />
                                 )}
                             />
                         </Grid>
+
+
                     </Grid>
 
 
-                    <Grid xs={12} sx={{ mb: 2 }}>
+                    <Grid item xs={12} sx={{ mb: 2 }}>
                         <TextField
                             fullWidth
                             multiline
                             rows={4}
-                            label="Event Description"
+                            label="Event Description *"
                             name="description"
                             value={formData.description}
                             onChange={handleChange}
+                            error={!!errors.description}
+                            helperText={errors.description}
                         />
                     </Grid>
 
                     <Grid container spacing={2} sx={{ mb: 2 }}>
-                        <Grid xs={12} md={6}>
+                        <Grid item xs={12} md={6}>
                             <StyledUploadBox
                                 label="Upload Cover Image"
-                                name="coverImage"
-                                fileData={formData.coverImage}
+                                name="cover_image"
+                                fileData={formData.cover_image}
                             />
                         </Grid>
-                        <Grid xs={12} md={6}>
+                        <Grid item xs={12} md={6}>
                             <StyledUploadBox
                                 label="Upload Logo Image"
-                                name="logoImage"
-                                fileData={formData.logoImage}
+                                name="logo_image"
+                                fileData={formData.logo_image}
                             />
-                            {errors.coverImage && (
-                                <Typography color="error" variant="caption">
-                                    {errors.coverImage}
+                        </Grid>
+
+                    </Grid>
+
+
+                    <Grid item xs={12} sx={{ mb: 2 }}>
+                        <StyledUploadBox
+                            label="Upload Event Images (optional)"
+                            name="event_images"
+                            fileData={formData.event_images}
+                            multiple
+                        />
+                    </Grid>
+
+                    <Grid container spacing={2} sx={{ mb: 2 }}>
+                        <Grid item xs={12}>
+                            <FormLabel>Event Type *</FormLabel>
+                            <RadioGroup
+                                row
+                                name="public_event"
+                                value={String(formData.public_event)}
+                                onChange={handleRadioChange}
+                            >
+                                <FormControlLabel value="true" control={<Radio />} label="Public Event" />
+                                <FormControlLabel value="false" control={<Radio />} label="Private Event" />
+                            </RadioGroup>
+                            {errors.public_event && (
+                                <Typography variant="caption" color="error">
+                                    {errors.public_event}
                                 </Typography>
                             )}
                         </Grid>
+
                     </Grid>
-
-                    <Grid xs={12} sx={{ mb: 2 }}>
-                        <StyledUploadBox
-                            label="Click to upload any Event pictures ( banner )"
-                            name="eventImages"
-                            multiple
-                            fileData={formData.eventImages}
-                        />
-                    </Grid>
-
-
-
                     <Grid container spacing={2} sx={{ mb: 2 }}>
-                        <Grid xs={12}>
-                            <FormLabel component="legend">Event Type</FormLabel>
-                            <RadioGroup
-                                row
-                                name="eventType"
-                                value={formData.eventType}
-                                onChange={handleRadioChange}
-                            >
-                                <FormControlLabel value="public" control={<Radio />} label="Public Event" />
-                                <FormControlLabel value="private" control={<Radio />} label="Private Event" />
-                            </RadioGroup>
+                        <Grid item xs={12} md={6}>
+                            <FormControlLabel
+                                control={
+                                    <Checkbox
+                                        name="food_tracking"
+                                        checked={formData.food_tracking}
+                                        onChange={handleCheckbox}
+                                    />
+                                }
+                                label="Food Tracking"
+                            />
                         </Grid>
-                        
-                        {errors.eventType && (
-                            <Typography variant="caption" color="error" sx={{ mt: 1 }}>
-                                {errors.eventType}
-                            </Typography>
-                        )}
+                        <Grid item xs={12} md={6}>
+                            <FormControlLabel
+                                control={
+                                    <Checkbox
+                                        name="gift_tracking"
+                                        checked={formData.gift_tracking}
+                                        onChange={handleCheckbox}
+                                    />
+                                }
+                                label="Gift Tracking"
+                            />
+                        </Grid>
 
                     </Grid>
 
-                    <Grid container spacing={2}>
-                        {[
-                            { label: 'Food Tracking', name: 'foodTracking' },
-                            { label: 'Gift Tracking', name: 'giftTracking' },
-                        ].map((checkbox, idx) => (
-                            <Grid xs={12} sm={6} key={idx}>
-                                <FormControlLabel
-                                    control={
-                                        <Checkbox
-                                            name={checkbox.name}
-                                            checked={formData[checkbox.name]}
-                                            onChange={handleCheckbox}
-                                        />
-                                    }
-                                    label={checkbox.label}
-                                />
-                            </Grid>
-                        ))}
-                    </Grid>
-
-                    <Grid xs={12}>
-                        <Button variant="contained" color="primary" type="submit" fullWidth>
+                    <Grid item xs={12}>
+                        <Button type="submit" variant="contained" fullWidth>
                             Create Event
                         </Button>
                     </Grid>
                 </form>
             </Box>
+
             <Snackbar
                 open={snackbar.open}
                 autoHideDuration={4000}
@@ -523,8 +493,6 @@ const CreateEvent = () => {
                     {snackbar.message}
                 </Alert>
             </Snackbar>
-
-
         </LocalizationProvider>
     );
 };
