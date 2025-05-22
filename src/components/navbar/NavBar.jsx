@@ -1,9 +1,13 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import navConfig from '../../lib/config/navItems';
+import { useGlobalInfo } from '../../contexts/globalContext';
 
-const NavBar = ({ role = 'admin' }) => {
+const NavBar = () => {
     const location = useLocation();
+    const context = useGlobalInfo();
+
+    const role = context.userType || "admin";
 
     return (
         <nav className="h-full w-[18vw] bg-navbar text-[14px] text-[#FFFFFF] font-semibold shadow-md p-4">

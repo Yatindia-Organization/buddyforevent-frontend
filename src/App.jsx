@@ -30,11 +30,7 @@ import CreatePoll from "./components/Admin/Poll/CreatePoll.jsx";
 function App() {
   const context = useGlobalInfo();
 
-  console.log(context, "this is context")
-
   const isLoggedIn = context.loginFlow;
-
-  console.log(isLoggedIn, "this is LoggedIn")
 
   return (
     <Router>

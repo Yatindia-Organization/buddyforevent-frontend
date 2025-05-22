@@ -8,7 +8,7 @@ import IconButton from '@mui/material/IconButton';
 import InputAdornment from '@mui/material/InputAdornment';
 import TextField from '@mui/material/TextField';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
-import {Turnstile} from "@marsidev/react-turnstile"; // Cloudflare CAPTCHA
+import { Turnstile } from "@marsidev/react-turnstile"; // Cloudflare CAPTCHA
 
 const LoginForm = () => {
     const context = useGlobalInfo();
@@ -56,6 +56,12 @@ const LoginForm = () => {
                 const data = await response.json();
 
                 if (response.ok) {
+                    const userRole = data?.user_type;
+                    context.changeLoginFlow(true);
+                    context.changeUserType(userRole);
+                    context.changeUserId(data?._id || "681bc76f713723b2769a6bf5")
+
+
                     setSnackbar({ open: true, message: 'Login successful!', severity: 'success' });
                     setTimeout(() => {
                         context.changeLoginFlow(true);

@@ -32,21 +32,12 @@ export default function Event() {
             } finally {
                 setLoading(false);
             }
-            // setEvent({
-            //     coverImage: "https://res.cloudinary.com/dovrpnbxe/image/upload/v1746723822/xa9ad9tilpzy8kp6lrd9.jpg",
-            //     description: "this is the event description ",
-            //     endDate: "2025-05-10T18:30:00.000Z",
-            //     eventImages: ["https://res.cloudinary.com/dovrpnbxe/image/upload/v1746723824/nionl9y9u6lwdzwl9xmr.jpg", "https://res.cloudinary.com/dovrpnbxe/image/upload/v1746723824/xauhjqf3qadb4slcyq4a.jpg"],
-            //     foodTracking: true,
-            //     giftTracking: true,
-            //     logoImage: "https://res.cloudinary.com/dovrpnbxe/image/upload/v1746723823/z4zeg4o6axyte0xf3mkz.jpg",
-            //     name: "event_010",
-            //     eventType: "public",
-            //     startDate: "2025-05-08T18:30:00.000Z",
-            // });
+          
             setLoading(false);
         };
+        
         fetchEvent();
+
     }, [id]);
 
     const showSnackbar = (message, severity = 'success') => {

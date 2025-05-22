@@ -26,11 +26,11 @@ export const AuthProvider = ({ children }) => {
                 setUser(response.user);
 
                 if (response?.user?.user_role === 'super_admin') {
-                    navigation.navigate('SuperAdminTabNavigation');
+                    navigation.navigate('dashboard');
                 } else if (response?.user.user_role === 'school_admin') {
-                    navigation.navigate('AdminTabNavigation');
+                    navigation.navigate('dashboard');
                 } else if (response?.user.user_role === 'user') {
-                    navigation.navigate('UserTabNavigation');
+                    navigation.navigate('dashboard');
                 }
             }
         } catch (error) {
