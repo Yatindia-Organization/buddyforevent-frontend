@@ -7,6 +7,8 @@ import { getDefaultFieldSchema } from '../../../../lib/config/getDefaultFieldSch
 import Snackbar from '@mui/material/Snackbar';
 import Alert from '@mui/material/Alert';
 import { Typography } from '@mui/material';
+import { API_ROUTE } from '../../../../lib/config';
+import { useGlobalInfo } from '../../../../contexts/globalContext';
 
 
 const FIELD_TYPES = [
@@ -25,6 +27,7 @@ const FIELD_TYPES = [
 ];
 
 export default function FormBuilder() {
+    const context = useGlobalInfo();
     const [fields, setFields] = useState([]);
     const [editingId, setEditingId] = useState(null);
     const [finalSchema, setFinalSchema] = useState(null);
@@ -55,7 +58,7 @@ export default function FormBuilder() {
         setEditingId(null);
     };
 
-    const handleProceed = () => {
+    const handleProceed = async () => {
         const hasEmptyLabel = fields.some(field => !field.label || field.label.trim() === '');
 
         if (hasEmptyLabel) {
@@ -65,17 +68,48 @@ export default function FormBuilder() {
                 severity: 'error'
             });
             return;
-        };
+        }
 
-        setFinalSchema(fields);
+        const schema = fields;
+        setFinalSchema(schema);
 
-        console.log(finalSchema, "this is the final schema ");
+        try {
+            const body = {
+                eventId: context?.event._id,
+                fields: schema
+            };
 
-        setSnackbar({
-            open: true,
-            message: 'Successfully created a dynamic form.',
-            severity: 'success'
-        });
+            const response = await fetch(`${API_ROUTE}/api/v1/even`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(body),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                const errorMessage = errorData?.message || `Event creation failed with status ${response.status}`;
+                throw new Error(errorMessage);
+            }
+
+            const result = await response.json();
+            console.log("Event submitted successfully:", result);
+
+            setSnackbar({
+                open: true,
+                message: 'Successfully created a dynamic form.',
+                severity: 'success'
+            });
+
+        } catch (error) {
+            console.error("Error submitting event:", error.message);
+            setSnackbar({
+                open: true,
+                message: error.message,
+                severity: 'error'
+            });
+        }
     };
 
 

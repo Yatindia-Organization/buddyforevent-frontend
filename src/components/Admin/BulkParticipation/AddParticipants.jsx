@@ -8,12 +8,15 @@ import {
     Paper,
     Snackbar,
     Alert,
-    Stack,
-    IconButton
+    Stack
 } from '@mui/material';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import { API_ROUTE } from '../../../lib/config';
+import { useGlobalInfo } from '../../../contexts/globalContext';
 
 export default function AddParticipants() {
+    const context = useGlobalInfo();
+
     const [excelData, setExcelData] = useState([]);
     const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
 
@@ -44,30 +47,45 @@ export default function AddParticipants() {
             return;
         }
 
+        // if (file.size > 1 * 1024 * 1024) {
+        //     showToast("File size exceeds 1MB limit.", 'error');
+        //     return;
+        // }
+
         const reader = new FileReader();
         reader.onload = (evt) => {
-            const bstr = evt.target.result;
-            const wb = XLSX.read(bstr, { type: 'binary' });
-            const wsname = wb.SheetNames[0];
-            const ws = wb.Sheets[wsname];
-            const data = XLSX.utils.sheet_to_json(ws, { header: 1 });
-            const headers = data[0];
-            const rows = data.slice(1);
-            const json = rows.map((row) =>
+            const data = new Uint8Array(evt.target.result);
+            const workbook = XLSX.read(data, { type: 'array' });
+            const sheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[sheetName];
+            const rawData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+            const headers = rawData[0];
+            const rows = rawData.slice(1);
+
+            const requiredHeaders = columnName.fields.map(f => f.label);
+            const missingHeaders = requiredHeaders.filter(h => !headers.includes(h));
+
+            if (missingHeaders.length > 0) {
+                showToast(`Missing required headers: ${missingHeaders.join(', ')}`, 'error');
+                return;
+            }
+
+            const jsonData = rows.map((row) =>
                 headers.reduce((acc, header, i) => {
                     acc[header] = row[i];
                     return acc;
                 }, {})
             );
 
-            setExcelData(json);
+            setExcelData(jsonData);
 
-            const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+            const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
 
-            fetch('/api/upload-participants', {
+            fetch(`${API_ROUTE}/api/v1/event/form-submission/event/${context?.eventId}/form/<formId>/upload-csv`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'text/csv' },
-                body: csv,
+                body: csvContent,
             })
                 .then(res => {
                     if (res.ok) {
@@ -76,13 +94,17 @@ export default function AddParticipants() {
                         showToast("Upload failed. Please try again.", 'error');
                     }
                 })
-                .catch(() => showToast("Upload failed. Server error.", 'error'));
+                .catch((err) => {
+                    console.error("Upload error:", err);
+                    showToast("Upload failed. Server error.", 'error');
+                });
         };
-        reader.readAsBinaryString(file);
+
+        reader.readAsArrayBuffer(file);
     };
 
     const handleDownloadTemplate = () => {
-        const headers = columnName.fields?.map(f => f.label.toLowerCase());
+        const headers = columnName.fields.map(f => f.label);
         const ws = XLSX.utils.aoa_to_sheet([headers]);
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, "Template");
@@ -93,7 +115,7 @@ export default function AddParticipants() {
     };
 
     return (
-        <Box sx={{ maxWidth: 1000}}>
+        <Box sx={{ maxWidth: 1000 }}>
             <Typography variant="h4" gutterBottom sx={{ fontWeight: 'bold', color: '#5D5C8D' }}>
                 Bulk Registration
             </Typography>
@@ -101,19 +123,18 @@ export default function AddParticipants() {
                 Issue tickets to your Participants without asking them to register online.
             </Typography>
             <Typography variant="caption" sx={{ color: 'red', mb: 3, display: 'block' }}>
-                Please note that the participants will be receiving email, sms and WhatsApp messages once after the registration
+                Participants will receive email, SMS and WhatsApp notifications after registration.
             </Typography>
 
             <Paper elevation={3} sx={{ p: 4, mt: 4 }}>
-
                 <Typography variant="body2" sx={{ mb: 1 }}>
-                    NOTE: Please find the sample csv file to be downloaded
+                    NOTE: Please download and use the sample CSV file.
                 </Typography>
                 <Button onClick={handleDownloadTemplate} variant="text" sx={{ textTransform: 'none', mb: 2 }}>
                     Download sample CSV
                 </Button>
                 <Typography variant="caption" sx={{ color: 'red', mb: 2, display: 'block' }}>
-                    Please download the sample csv file and upload the same with your data filled
+                    Fill the downloaded file and upload it with your participant data.
                 </Typography>
 
                 <Box
@@ -146,28 +167,11 @@ export default function AddParticipants() {
                             or drag and drop
                         </Typography>
                         <Typography variant="caption" sx={{ display: 'block', mt: 1 }}>
-                            CSV less than 1MB
+                            Max file size: 1 MB
                         </Typography>
                     </label>
                 </Box>
-
-
-                <Typography variant="caption" sx={{ display: 'block', mt: 1 }}>
-                    NOTE: Maximum file size is 1 MB
-                </Typography>
-
             </Paper>
-
-
-            <Stack direction="row" spacing={2} justifyContent="flex-end" sx={{ mt: 3 }}>
-                <Button variant="outlined" color="inherit">
-                    Cancel
-                </Button>
-                <Button variant="contained" color="success" onClick={() => showToast('Simulated Upload')}>
-                    Upload CSV
-                </Button>
-            </Stack>
-
 
             {excelData.length > 0 && (
                 <Box>
