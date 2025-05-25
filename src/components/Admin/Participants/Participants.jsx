@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
     Box,
     Typography,
@@ -15,20 +15,25 @@ import {
     MenuItem,
     Button
 } from '@mui/material';
+import { API_ROUTE } from '../../../lib/config';
+import { useGlobalInfo } from '../../../contexts/globalContext';
 
-const participantData = [
-    { name: 'Guest 2', entry: '09:00', exit: '18:00', gift: 'YES', food: 'YES' },
-    { name: 'Guest', entry: '00:00', exit: '00:00', gift: 'NO', food: 'NO' },
-    { name: 'Guest', entry: '10:30', exit: '18:00', gift: 'NO', food: 'NO' },
-    { name: 'Guest', entry: '09:00', exit: '18:00', gift: 'YES', food: 'YES' },
-    { name: 'Guest', entry: '09:00', exit: '18:00', gift: 'YES', food: 'YES' },
-    { name: 'Guest', entry: '09:00', exit: '18:00', gift: 'YES', food: 'YES' }
-];
+// const participantData = [
+//     { name: 'Guest 2', entry: '09:00', exit: '18:00', gift: 'YES', food: 'YES' },
+//     { name: 'Guest', entry: '00:00', exit: '00:00', gift: 'NO', food: 'NO' },
+//     { name: 'Guest', entry: '10:30', exit: '18:00', gift: 'NO', food: 'NO' },
+//     { name: 'Guest', entry: '09:00', exit: '18:00', gift: 'YES', food: 'YES' },
+//     { name: 'Guest', entry: '09:00', exit: '18:00', gift: 'YES', food: 'YES' },
+//     { name: 'Guest', entry: '09:00', exit: '18:00', gift: 'YES', food: 'YES' }
+// ];
 
 export default function Participants() {
+    const context = useGlobalInfo();
+
     const [filter, setFilter] = useState('All');
     const [page, setPage] = useState(1);
     const [rowsPerPage, setRowsPerPage] = useState(10);
+    const [participantData, setParticipantData] = useState([]);
 
     const getBoxStyle = (value) => {
         if (value === 'YES') return { backgroundColor: '#e0f0ff', color: 'green' };
@@ -60,6 +65,29 @@ export default function Participants() {
 
     const handlePrevPage = () => setPage((prev) => Math.max(prev - 1, 1));
     const handleNextPage = () => setPage((prev) => Math.min(prev + 1, totalPages));
+
+    useEffect(() => {
+        console.log("context.eventId")
+        if (context.eventId) return;
+
+        const fetchContent = async () => {
+            console.log("partcipants list")
+            try {
+                const response = await fetch(`${API_ROUTE}/api/v1/event/form-submission`)
+                const result = await response.json();
+                console.log(result)
+                const filteredData = result.filter((item) => item?.eventId === "6647159f56a4bfcf3a4f21d3")
+                console.log(filteredData, "This is filter data");
+
+                setParticipantData(filteredData);
+            } catch (error) {
+                console.error("Failed to fetch the data ", error);
+            }
+        };
+
+        fetchContent();
+
+    }, [context?.eventId]);
 
     return (
         <Box p={3}>
@@ -96,9 +124,9 @@ export default function Participants() {
                     <TableBody>
                         {paginatedData.map((row, idx) => (
                             <TableRow key={idx}>
-                                <TableCell>{row.name}</TableCell>
-                                <TableCell>{row.entry}</TableCell>
-                                <TableCell>{row.exit}</TableCell>
+                                <TableCell>{row.responses[0]?.value}</TableCell>
+                                <TableCell>{row.entryTime || "Not Entered"}</TableCell>
+                                <TableCell>{row.exitTime || "Not Leaved"}</TableCell>
                                 <TableCell>
                                     <Box
                                         sx={{
@@ -110,7 +138,7 @@ export default function Participants() {
                                             width: 'fit-content',
                                         }}
                                     >
-                                        {row.gift}
+                                        {row.gift || "NO"}
                                     </Box>
                                 </TableCell>
                                 <TableCell>
@@ -124,7 +152,7 @@ export default function Participants() {
                                             width: 'fit-content',
                                         }}
                                     >
-                                        {row.food}
+                                        {row.food || "NO"}
                                     </Box>
                                 </TableCell>
                             </TableRow>

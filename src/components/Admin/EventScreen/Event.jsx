@@ -3,10 +3,14 @@ import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import EventStatsChart from '../../echarts/EventStatsChart';
 import { API_ROUTE } from '../../../lib/config';
+import { useGlobalInfo } from '../../../contexts/globalContext';
 
 
 export default function Event() {
+    const context = useGlobalInfo();
     const { id } = useParams();
+
+
     const [event, setEvent] = useState(null);
     const [loading, setLoading] = useState(true);
     const [modalOpen, setModalOpen] = useState(false);
@@ -25,17 +29,18 @@ export default function Event() {
                 const res = await fetch(`${API_ROUTE}/api/v1/event/eventid/${id}`);
                 if (!res.ok) throw new Error('Event not found');
                 const data = await res.json();
-                setEvent(data);
+                setEvent(data?.data);
+                context.changeEvent(data?.data);
             } catch (err) {
                 console.error(err);
                 setEvent(null);
             } finally {
                 setLoading(false);
             }
-          
+
             setLoading(false);
         };
-        
+
         fetchEvent();
 
     }, [id]);

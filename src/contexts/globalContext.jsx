@@ -10,6 +10,7 @@ export function GlobalProvider({ children }) {
     const [loginFlow, setLoginFLow] = useState(true);
     const [userType, setUserType] = useState(null);
     const [userId, setUserId] = useState(null);
+    const [event, setEvent] = useState([]);
 
     return (<GlobalContext.Provider
         value={{
@@ -18,7 +19,9 @@ export function GlobalProvider({ children }) {
             userType,
             changeUserType: (new_state) => setUserType(new_state),
             userId,
-            changeUserId: (new_state) => setUserId(new_state)
+            changeUserId: (new_state) => setUserId(new_state),
+            event,
+            changeEvent: (new_state) => setEvent(new_state)
         }}
 
     >
