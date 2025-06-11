@@ -18,7 +18,6 @@ import {
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import AutorenewIcon from '@mui/icons-material/Autorenew';
 
 const mockData = [
     { id: '#15267', date: 'Mar 1, 2023', amount: 100, questions: 1, status: 'Success' },
