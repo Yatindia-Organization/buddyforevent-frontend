@@ -1,4 +1,3 @@
-// src/NavItems.js
 const navConfig = {
     superAdmin: [
         {

@@ -8,7 +8,7 @@ import IconButton from '@mui/material/IconButton';
 import InputAdornment from '@mui/material/InputAdornment';
 import TextField from '@mui/material/TextField';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
-import { Turnstile } from "@marsidev/react-turnstile"; // Cloudflare CAPTCHA
+import { Turnstile } from "@marsidev/react-turnstile";
 
 const LoginForm = () => {
     const context = useGlobalInfo();
@@ -18,6 +18,7 @@ const LoginForm = () => {
     const [captchaToken, setCaptchaToken] = useState(null);
     const [loading, setLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
+    const SITE_KEY = import.meta.env.VITE_CLOUDFLARE_SITE_KEY
 
     const [snackbar, setSnackbar] = useState({
         open: false,
@@ -142,7 +143,7 @@ const LoginForm = () => {
 
                 <div className="mb-[2vw]">
                     <Turnstile
-                        siteKey="YOUR_CLOUDFLARE_SITE_KEY"
+                        siteKey={SITE_KEY}
                         onSuccess={(token) => {
                             setCaptchaToken(token);
                             setErrors(prev => ({ ...prev, captcha: undefined }));

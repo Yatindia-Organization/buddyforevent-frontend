@@ -1,0 +1,188 @@
+{
+    "superAdmin": {
+        "email": "user@gmail.com",
+        "password": "123456"
+    },
+    "leads": [
+        {
+            "_id": "1",
+            "bde": "John Doe",
+            "name": "St. Josephs School Of Excellence",
+            "email": "alice.smith@example.com",
+            "mobile_number": "1234567890",
+            "city": "Tambaram",
+            "district": "Chennai",
+            "state": "Tamilnadu",
+            "land_line_number": "2125551234",
+            "conatct_person_name": "Bob Johnson",
+            "conatct_person_designation": "Manager",
+            "conatct_person_number": "9876543210",
+            "conatct_person_email": "bob.johnson@example.com",
+            "source_of_lead": "Website",
+            "any_description": "Interested in our services.",
+            "person_name": "Alice",
+            "company_name": "ACME Corp",
+            "call_update": [
+                {
+                    "admin_role": "Sales Rep",
+                    "admin_id": "admin_1",
+                    "admin_name": "John Doe",
+                    "status_of_call": "Pending",
+                    "next_follow_up_date": "2024-08-15",
+                    "follow_up_by_call": "Yes",
+                    "end_user_id": "end_user_1"
+                },
+                {
+                    "admin_role": "Sales Rep",
+                    "admin_id": "admin_1",
+                    "admin_name": "John Doe",
+                    "status_of_call": "Completed",
+                    "next_follow_up_date": "2024-08-16",
+                    "follow_up_by_call": "Yes",
+                    "end_user_id": "end_user_1"
+                }
+            ],
+            "visit_update": [
+                {
+                    "admin_role": "Sales Rep",
+                    "admin_id": "admin_1",
+                    "admin_name": "John Doe",
+                    "status_of_visit": "Scheduled",
+                    "locatioin": "Client Office",
+                    "next_follow_up_date": "2024-08-20",
+                    "follow_up_by_call": "No",
+                    "end_user_id": "end_user_1"
+                }
+            ],
+            "status_update": [
+                {
+                    "admin_role": "Sales Rep",
+                    "admin_id": "admin_1",
+                    "admin_name": "John Doe",
+                    "status_of_call": "Completed",
+                    "status_of_visit": "Completed",
+                    "next_follow_up_date": "2024-09-01",
+                    "follow_up_by_call": "Yes",
+                    "end_user_id": "end_user_1"
+                }
+            ],
+            "assign_to_admin": "admin_1",
+            "assign_to_end_user": "end_user_1",
+            "created_date_time": "2024-08-01T10:00:00Z"
+        },
+        {
+            "_id": "2",
+            "bde": "Jane Smith",
+            "name": "Vruksha international school of Montessori",
+            "email": "david.brown@example.com",
+            "mobile_number": "0987654321",
+            "city": "Palayamkottai",
+            "district": "Tirunelveli",
+            "state": "Tamilnadu",
+            "land_line_number": "3105556789",
+            "conatct_person_name": "Sarah Davis",
+            "conatct_person_designation": "Director",
+            "conatct_person_number": "1234567890",
+            "conatct_person_email": "sarah.davis@example.com",
+            "source_of_lead": "Referral",
+            "any_description": "Looking for new solutions.",
+            "person_name": "David",
+            "company_name": "XYZ Inc.",
+            "call_update": [
+                {
+                    "admin_role": "Sales Rep",
+                    "admin_id": "admin_2",
+                    "admin_name": "Jane Smith",
+                    "status_of_call": "Pending",
+                    "next_follow_up_date": "2024-08-18",
+                    "follow_up_by_call": "Yes",
+                    "end_user_id": "end_user_2"
+                }
+            ],
+            "visit_update": [
+                {
+                    "admin_role": "Sales Rep",
+                    "admin_id": "admin_2",
+                    "admin_name": "Jane Smith",
+                    "status_of_visit": "Completed",
+                    "locatioin": "Client Headquarters",
+                    "next_follow_up_date": "2024-08-25",
+                    "follow_up_by_call": "Yes",
+                    "end_user_id": "end_user_2"
+                }
+            ],
+            "status_update": [
+                {
+                    "admin_role": "Sales Rep",
+                    "admin_id": "admin_2",
+                    "admin_name": "Jane Smith",
+                    "status_of_call": "Pending",
+                    "status_of_visit": "Completed",
+                    "next_follow_up_date": "2024-09-05",
+                    "follow_up_by_call": "Yes",
+                    "end_user_id": "end_user_2"
+                }
+            ],
+            "assign_to_admin": "admin_2",
+            "assign_to_end_user": "end_user_2",
+            "created_date_time": "2024-08-02T10:00:00Z"
+        },
+        {
+            "_id": "3",
+            "bde": "Alice Johnson",
+            "name": "Vruksha international school of Montessori",
+            "email": "emily.white@example.com",
+            "mobile_number": "1231231234",
+            "city": "Tiruvallur",
+            "district": "Tiruvallur",
+            "state": "Tamilnadu",
+            "land_line_number": "3125554321",
+            "conatct_person_name": "Tom Green",
+            "conatct_person_designation": "CEO",
+            "conatct_person_number": "3213214321",
+            "conatct_person_email": "tom.green@example.com",
+            "source_of_lead": "Social Media",
+            "any_description": "Interested in partnership.",
+            "person_name": "Emily",
+            "company_name": "Innovate LLC",
+            "call_update": [
+                {
+                    "admin_role": "Sales Rep",
+                    "admin_id": "admin_3",
+                    "admin_name": "Alice Johnson",
+                    "status_of_call": "In Progress",
+                    "next_follow_up_date": "2024-08-22",
+                    "follow_up_by_call": "No",
+                    "end_user_id": "end_user_3"
+                }
+            ],
+            "visit_update": [
+                {
+                    "admin_role": "Sales Rep",
+                    "admin_id": "admin_3",
+                    "admin_name": "Alice Johnson",
+                    "status_of_visit": "Scheduled",
+                    "locatioin": "Office Meeting Room",
+                    "next_follow_up_date": "2024-08-30",
+                    "follow_up_by_call": "No",
+                    "end_user_id": "end_user_3"
+                }
+            ],
+            "status_update": [
+                {
+                    "admin_role": "Sales Rep",
+                    "admin_id": "admin_3",
+                    "admin_name": "Alice Johnson",
+                    "status_of_call": "In Progress",
+                    "status_of_visit": "Scheduled",
+                    "next_follow_up_date": "2024-09-10",
+                    "follow_up_by_call": "No",
+                    "end_user_id": "end_user_3"
+                }
+            ],
+            "assign_to_admin": "admin_3",
+            "assign_to_end_user": "end_user_3",
+            "created_date_time": "2024-08-03T10:00:00Z"
+        }
+    ]
+}
