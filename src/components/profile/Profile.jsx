@@ -1,106 +1,137 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     Avatar,
     Box,
     Button,
     Grid,
-    MenuItem,
     Paper,
     TextField,
     Typography
 } from '@mui/material';
-import PhoneInput from 'react-phone-input-2';
-import 'react-phone-input-2/lib/material.css';
+import { deepPurple } from '@mui/material/colors';
+import { API_ROUTE } from '../../lib/config';
+import { useGlobalInfo } from '../../contexts/globalContext';
 
 export default function Profile() {
+    const token = localStorage.getItem('token');
+    const context = useGlobalInfo();
 
     const [formData, setFormData] = useState({
-        firstName: 'Yash',
-        lastName: 'Ghori',
-        email: 'yghori@asite.com',
+        name: '',
+        email: '',
         password: '',
-        phone: '9172048144030',
-        nationality: 'India',
-        designation: 'UI Intern',
-        countryCode: 'in'
+        phone_number: '',
+        company_name: '',
+        company_gst_number: ''
     });
 
+    useEffect(() => {
+        const userData = JSON.parse(localStorage.getItem('user') || '{}');
+        setFormData({
+            name: userData.name || '',
+            email: userData.email || '',
+            password: '',
+            phone_number: userData.phone_number?.toString() || '',
+            company_name: userData.company_name || '',
+            company_gst_number: userData.company_gst_number || ''
+        });
+    }, []);
 
     const handleChange = (e) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
+        const { name, value } = e.target;
+        setFormData(prev => ({ ...prev, [name]: value }));
     };
 
-    const handlePhoneChange = (value, data) => {
-        setFormData({
-            ...formData,
-            phone: value,
-            countryCode: data.countryCode
-        });
-    };
+    const handleSubmit = async () => {
+        const userData = JSON.parse(localStorage.getItem('user') || '{}');
+        const userId = userData._id;
 
+        const payload = { ...formData };
+        if (!payload.password) delete payload.password;
+
+        try {
+            const response = await fetch(`${API_ROUTE}/api/v1/users/${userId}`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`
+                },
+                body: JSON.stringify(payload)
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                alert('Profile updated successfully');
+
+                // update localStorage and context
+                const updatedUser = result.data;
+                localStorage.setItem('user', JSON.stringify(updatedUser));
+                context.changeUserId(updatedUser._id);
+                context.changeUserType(updatedUser.user_type);
+
+                setFormData(prev => ({ ...prev, password: '' }));
+            } else {
+                alert(result.message || 'Update failed');
+            }
+        } catch (err) {
+            console.error('Update failed:', err);
+            alert('Something went wrong');
+        }
+    };
 
     return (
-        <Box sx={{ p: 4, display: 'flex', gap: 4, bgcolor: '#f5f9ff', minHeight: '100vh' }}>
-            {/* Left Profile Info */}
-            <Paper elevation={3} sx={{ p: 3, width: 300, borderRadius: 2 }}>
-                <Box display="flex" justifyContent="center" mb={2}>
-                    <Avatar sx={{ width: 100, height: 100, border: '3px solid #f50057' }} />
+        <Box
+            sx={{
+                minHeight: '100vh',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                bgcolor: '#f0f4f8',
+                p: 2
+            }}
+        >
+            <Paper
+                elevation={4}
+                sx={{
+                    p: { xs: 3, sm: 5 },
+                    borderRadius: 3,
+                    maxWidth: 600,
+                    width: '100%',
+                    bgcolor: '#fff'
+                }}
+            >
+                <Box textAlign="center" mb={4}>
+                    <Avatar
+                        sx={{
+                            bgcolor: deepPurple[500],
+                            width: 80,
+                            height: 80,
+                            mx: 'auto',
+                            fontSize: 32
+                        }}
+                    >
+                        {formData.name?.[0]?.toUpperCase() || 'U'}
+                    </Avatar>
+                    <Typography variant="h6" mt={1}>
+                        {formData.name || 'User'}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                        Edit your profile details
+                    </Typography>
                 </Box>
-                <Typography variant="h6" align="center">Super Admin</Typography>
-                <Typography variant="body2" align="center">Chennai</Typography>
-                <Typography variant="body2" align="center" mb={2}>India</Typography>
 
-                <Box sx={{ borderTop: '1px solid #ccc', pt: 2 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                        <img src="/svg/person.svg" alt="Role" style={{ marginRight: 8 }} />
-                        <Typography variant="body2">UI - Intern</Typography>
-                    </Box>
-                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                        <img src="/svg/timer.svg" alt="Status" style={{ marginRight: 8 }} />
-                        <Typography variant="body2">on-teak</Typography>
-                    </Box>
-                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                        <img src="/svg/phone.svg" alt="Phone" style={{ marginRight: 8 }} />
-                        <Typography variant="body2">+91 7048144030</Typography>
-                    </Box>
-                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                        <img src="/svg/mail.svg" alt="Email" style={{ marginRight: 8 }} />
-                        <Typography variant="body2">abcdij@asite.com</Typography>
-                    </Box>
-                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                        <img src="/svg/folder.svg" alt="Department" style={{ marginRight: 8 }} />
-                        <Typography variant="body2">PDT - I</Typography>
-                    </Box>
-                </Box>
-
-            </Paper>
-
-            {/* Right Edit Form */}
-            <Paper elevation={3} sx={{ p: 4, flex: 1, borderRadius: 2 }}>
-                <Typography variant="h6" mb={3}>Edit Profile</Typography>
-
-                <Grid container spacing={4} sx={{ mb: 4 }}>
-                    <Grid item xs={6}>
+                <Grid container spacing={3}>
+                    <Grid item xs={12} sm={6}>
                         <TextField
-                            label="First Name"
-                            name="firstName"
-                            value={formData.firstName}
+                            label="Name"
+                            name="name"
+                            value={formData.name}
                             onChange={handleChange}
                             fullWidth
                         />
                     </Grid>
-                    <Grid item xs={6}>
-                        <TextField
-                            label="Last Name"
-                            name="lastName"
-                            value={formData.lastName}
-                            onChange={handleChange}
-                            fullWidth
-                        />
-                    </Grid>
-                </Grid>
-                <Grid container spacing={4} sx={{ mb: 4 }}>
-                    <Grid item xs={6}>
+                    <Grid item xs={12} sm={6}>
                         <TextField
                             label="Email"
                             name="email"
@@ -109,68 +140,64 @@ export default function Profile() {
                             fullWidth
                         />
                     </Grid>
-                    <Grid item xs={6}>
-                        <PhoneInput
-                            country={'in'} // default to India
-                            value={formData.phone}
-                            onChange={handlePhoneChange}
-                            inputStyle={{ width: '100%' }}
-                            specialLabel="Phone Number"
-                            enableSearch
+                    <Grid item xs={12} sm={6}>
+                        <TextField
+                            label="Phone Number"
+                            name="phone_number"
+                            value={formData.phone_number}
+                            onChange={handleChange}
+                            fullWidth
                         />
                     </Grid>
-
-                </Grid>
-                <Grid container spacing={4} sx={{ mb: 4 }}>
-                    <Grid item xs={6}>
+                    <Grid item xs={12} sm={6}>
                         <TextField
                             label="Password"
                             name="password"
                             type="password"
-                            placeholder="Change Password"
                             value={formData.password}
+                            onChange={handleChange}
+                            placeholder="Change Password"
+                            fullWidth
+                        />
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
+                        <TextField
+                            label="Company Name"
+                            name="company_name"
+                            value={formData.company_name}
                             onChange={handleChange}
                             fullWidth
                         />
                     </Grid>
-
-                    <Grid item xs={6}>
+                    <Grid item xs={12} sm={6}>
                         <TextField
-                            select
-                            label="Nationality"
-                            name="nationality"
-                            value={formData.nationality}
+                            label="Company GST Number"
+                            name="company_gst_number"
+                            value={formData.company_gst_number}
                             onChange={handleChange}
                             fullWidth
-                        >
-                            <MenuItem value="India">India</MenuItem>
-                            <MenuItem value="USA">USA</MenuItem>
-                            <MenuItem value="Nigeria">Nigeria</MenuItem>
-                        </TextField>
+                        />
                     </Grid>
                 </Grid>
 
-                <Grid container spacing={4} sx={{ mb: 4 }}>
-                    <TextField
-                        select
-                        label="Designation"
-                        name="designation"
-                        value={formData.designation}
-                        onChange={handleChange}
-                        fullWidth
-                    >
-                        <MenuItem value="UI Intern">UI Intern</MenuItem>
-                        <MenuItem value="Developer">Developer</MenuItem>
-                        <MenuItem value="Admin">Admin</MenuItem>
-                    </TextField>
-                </Grid>
-
                 <Box mt={4} textAlign="center">
-                    <Button variant="contained" sx={{ px: 6, py: 1.5, bgcolor: '#3f51b5' }}>
-                        Save
+                    <Button
+                        variant="contained"
+                        sx={{
+                            px: 5,
+                            py: 1.5,
+                            fontSize: 16,
+                            bgcolor: '#3f51b5',
+                            '&:hover': {
+                                bgcolor: '#2c387e'
+                            }
+                        }}
+                        onClick={handleSubmit}
+                    >
+                        Save Changes
                     </Button>
                 </Box>
             </Paper>
-        </Box >
+        </Box>
     );
 }

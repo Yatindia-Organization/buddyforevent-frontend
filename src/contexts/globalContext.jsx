@@ -7,24 +7,50 @@ export function useGlobalInfo() {
 }
 
 export function GlobalProvider({ children }) {
-    const [loginFlow, setLoginFLow] = useState(true);
-    const [userType, setUserType] = useState(null);
-    const [userId, setUserId] = useState(null);
+    const [loginFlow, setLoginFLow] = useState(() => {
+        return localStorage.getItem("isLoggedIn") === "true";
+    });
+
+    const [userType, setUserType] = useState(() => {
+        return localStorage.getItem("userType") || null;
+    });
+
+    const [userId, setUserId] = useState(() => {
+        return localStorage.getItem("userId") || null;
+    });
+
     const [event, setEvent] = useState([]);
 
-    return (<GlobalContext.Provider
-        value={{
-            loginFlow,
-            changeLoginFlow: (new_state) => setLoginFLow(new_state),
-            userType,
-            changeUserType: (new_state) => setUserType(new_state),
-            userId,
-            changeUserId: (new_state) => setUserId(new_state),
-            event,
-            changeEvent: (new_state) => setEvent(new_state)
-        }}
+    const changeLoginFlow = (new_state) => {
+        localStorage.setItem("isLoggedIn", new_state);
+        setLoginFLow(new_state);
+    };
 
-    >
-        {children}
-    </GlobalContext.Provider>)
+    const changeUserType = (new_state) => {
+        localStorage.setItem("userType", new_state);
+        setUserType(new_state);
+    };
+
+    const changeUserId = (new_state) => {
+        localStorage.setItem("userId", new_state);
+        setUserId(new_state);
+    };
+
+    return (
+        <GlobalContext.Provider
+            value={{
+                loginFlow,
+                changeLoginFlow,
+                userType,
+                changeUserType,
+                userId,
+                changeUserId,
+                event,
+                changeEvent: setEvent
+            }}
+        >
+            {children}
+        </GlobalContext.Provider>
+    );
 }
+

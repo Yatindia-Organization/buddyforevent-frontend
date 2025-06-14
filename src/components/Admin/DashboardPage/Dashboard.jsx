@@ -66,6 +66,7 @@ const Dashboard = () => {
         if (!userId) return;
 
         const fetchEvents = async () => {
+            
             try {
                 const response = await fetch(`${API_ROUTE}/api/v1/event/userid/${userId}`);
                 console.log(response, "this is dashboard")
@@ -183,26 +184,35 @@ const Dashboard = () => {
                                         </TableRow>
                                     </TableHead>
                                     <TableBody>
-                                        {paginatedEvents.map((row, index) => (
-                                            <TableRow key={index}>
-                                                <TableCell onClick={() => handleClick(row._id)} className='cursor-pointer'>{row.name}</TableCell>
-                                                <TableCell>{new Date(row.startDate).toLocaleDateString()}</TableCell>
-                                                <TableCell>{new Date(row.end_date).toLocaleDateString()}</TableCell>
-                                                <TableCell>{row.privateEvent ? 'Yes' : 'No'}</TableCell>
-                                                <TableCell>{row.publicEvent ? 'Yes' : 'No'}</TableCell>
-                                                <TableCell>{row.gift_tracking ? 'Yes' : 'No'}</TableCell>
-                                                <TableCell>{row.food_tracking ? 'Yes' : 'No'}</TableCell>
-                                                <TableCell>
-                                                    <IconButton onClick={() => handleEdit(row)}>
-                                                        <EditIcon />
-                                                    </IconButton>
-                                                    <IconButton onClick={() => handleDelete(row)}>
-                                                        <DeleteIcon />
-                                                    </IconButton>
-                                                </TableCell>
-                                            </TableRow>
-                                        ))}
-                                    </TableBody>
+    {paginatedEvents.length === 0 ? (
+        <TableRow>
+            <TableCell colSpan={8} align="center">
+                No events available.
+            </TableCell>
+        </TableRow>
+    ) : (
+        paginatedEvents.map((row, index) => (
+            <TableRow key={index}>
+                <TableCell onClick={() => handleClick(row._id)} className='cursor-pointer'>{row.name}</TableCell>
+                <TableCell>{new Date(row.startDate).toLocaleDateString()}</TableCell>
+                <TableCell>{new Date(row.end_date).toLocaleDateString()}</TableCell>
+                <TableCell>{row.privateEvent ? 'Yes' : 'No'}</TableCell>
+                <TableCell>{row.publicEvent ? 'Yes' : 'No'}</TableCell>
+                <TableCell>{row.gift_tracking ? 'Yes' : 'No'}</TableCell>
+                <TableCell>{row.food_tracking ? 'Yes' : 'No'}</TableCell>
+                <TableCell>
+                    <IconButton onClick={() => handleEdit(row)}>
+                        <EditIcon />
+                    </IconButton>
+                    <IconButton onClick={() => handleDelete(row)}>
+                        <DeleteIcon />
+                    </IconButton>
+                </TableCell>
+            </TableRow>
+        ))
+    )}
+</TableBody>
+
                                 </Table>
                             </TableContainer>
 
