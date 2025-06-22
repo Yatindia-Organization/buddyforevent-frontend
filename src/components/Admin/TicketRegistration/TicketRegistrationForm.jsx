@@ -1,210 +1,247 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from "react";
 import {
-    TextField,
-    Grid,
-    Switch,
-    FormControlLabel,
-    Button,
-    Typography,
-    Box,
-} from '@mui/material';
-import { DatePicker } from '@mui/x-date-pickers/DatePicker';
-import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+  Box,
+  Button,
+  Typography,
+  IconButton,
+  TextField,
+  Grid,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+} from "@mui/material";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
+import DeleteIcon from "@mui/icons-material/Delete";
+import { useNavigate } from "react-router-dom";
+import { API_ROUTE } from "../../../lib/config";
+import { useGlobalInfo } from "../../../contexts/globalContext";
 
-export default function TicketRegistrationForm() {
-    const [formData, setFormData] = useState({
-        registrationName: '',
-        quantity: '',
-        minQty: '',
-        maxQty: '',
-        description: '',
-        startDate: null,
-        endDate: null,
-        showRemaining: true,
-        teamRegistration: false,
+export default function TicketRegistrationForm({ eventName }) {
+  const { event: eventId } = useGlobalInfo();
+  const navigate = useNavigate();
+
+  const [tiers, setTiers] = useState([]);
+  const [errors, setErrors] = useState({});
+  const [isEditing, setIsEditing] = useState(false);
+
+  useEffect(() => {
+    if (!eventId) return;
+    fetch(`${API_ROUTE}/api/v1/event/ticket-tiers/${eventId}`)
+      .then((r) => {
+        if (!r.ok) throw new Error("Failed to fetch tiers");
+        return r.json();
+      })
+      .then((json) => {
+        const existing = json.data.ticket_tiers;
+        setTiers(
+          existing.length
+            ? existing
+            : [{ name: "", description: "", price: "", capacity: "", perks: "" }]
+        );
+      })
+      .catch(() => {
+        setTiers([{ name: "", description: "", price: "", capacity: "", perks: "" }]);
+      });
+  }, [eventId]);
+
+  const handleTierChange = (idx, field, val) => {
+    const copy = [...tiers];
+    copy[idx][field] =
+      field === "price" || field === "capacity" ? (val === "" ? "" : Number(val)) : val;
+    setTiers(copy);
+  };
+
+  const handleAddTier = () =>
+    setTiers([
+      ...tiers,
+      { name: "", description: "", price: "", capacity: "", perks: "" },
+    ]);
+
+  const handleRemoveTier = (idx) => setTiers(tiers.filter((_, i) => i !== idx));
+
+  const validate = () => {
+    const errs = {};
+    tiers.forEach((t, i) => {
+      if (!t.name) errs[`name${i}`] = "Name is required";
+      if (typeof t.price !== "number" || t.price < 0)
+        errs[`price${i}`] = "Valid price required";
+      if (typeof t.capacity !== "number" || t.capacity < 1)
+        errs[`capacity${i}`] = "Valid capacity required";
     });
+    setErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
 
-    const [errors, setErrors] = useState({});
+  const handleSubmit = async () => {
+    if (!validate()) return;
+    const payload = tiers.map((t) => ({
+      name: t.name,
+      description: t.description,
+      price: t.price,
+      capacity: t.capacity,
+      perks: t.perks
+        .split(",")
+        .map((p) => p.trim())
+        .filter((p) => p),
+    }));
 
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-        setFormData((prev) => ({ ...prev, [name]: value }));
-    };
+    try {
+      const res = await fetch(
+        `${API_ROUTE}/api/v1/event/ticket-tiers/${eventId}`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ticket_tiers: payload }),
+        }
+      );
+      if (!res.ok) throw new Error(await res.text());
+      // you can either go back to table-view:
+      setIsEditing(false);
+      // or navigate away:
+      // navigate(`/event-dashboard/event/${eventId}`);
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
-    const handleToggle = (name) => (e) => {
-        setFormData((prev) => ({ ...prev, [name]: e.target.checked }));
-    };
-
-    const minStartDate = new Date(new Date().setDate(new Date().getDate() + 1));
-    const minEndDate = formData.startDate
-        ? new Date(new Date(formData.startDate).getTime() + 24 * 60 * 60 * 1000)
-        : new Date(new Date().setDate(new Date().getDate() + 2));
-
-    const Label = ({ text }) => (
-        <Typography variant="body2" fontWeight={500} sx={{ minWidth: '150px' }}>
-            {text}
-        </Typography>
-    );
-
+  if (!isEditing) {
     return (
-        <LocalizationProvider dateAdapter={AdapterDateFns}>
-            <Box sx={{ p: 3, bgcolor: '#fff', borderRadius: 2 }}>
-                <Typography variant="body2" color="#E36A6C" mb={3}>
-                    Please note that the participants will be receiving email, SMS, and WhatsApp messages after the registration.
-                </Typography>
-
-                <Grid spacing={3}>
-                    {/* Registration Name */}
-
-                    <Grid item xs={12} sx={{ mb: 2 }} container alignItems="center">
-                        <Grid item xs={12} md={3}><Label text="Registration Name *" /></Grid>
-                        <Grid item xs={12} md={9}>
-                            <TextField
-                                fullWidth
-                                name="registrationName"
-                                placeholder="e.g. Event 001"
-                                value={formData.registrationName}
-                                onChange={handleChange}
-                            />
-                        </Grid>
-                    </Grid>
-
-                    {/* Registration Quantity */}
-                    <Grid item xs={12} sx={{ mb: 2 }} container alignItems="center">
-                        <Grid item xs={12} md={3}><Label text="Registration Quantity *" /></Grid>
-                        <Grid item xs={12} md={9}>
-                            <TextField
-                                fullWidth
-                                name="quantity"
-                                placeholder="e.g. total ticket quantity"
-                                value={formData.quantity}
-                                onChange={handleChange}
-                            />
-                        </Grid>
-                    </Grid>
-
-                    {/* Min and Max Qty */}
-                    <Grid item xs={12} container sx={{ mb: 2 }} alignItems="center">
-                        <Grid item xs={12} md={3}><Label text="Min. Qty. *" /></Grid>
-                        <Grid item xs={6} md={4}>
-                            <TextField
-                                fullWidth
-                                name="minQty"
-                                placeholder="e.g. 1"
-                                value={formData.minQty}
-                                onChange={handleChange}
-                            />
-                        </Grid>
-                        <Grid item xs={12} md={2} sx={{ ml: 8 }} ><Label text="Max. Qty. *" /></Grid>
-                        <Grid item xs={6} md={3}>
-                            <TextField
-                                fullWidth
-                                name="maxQty"
-                                placeholder="e.g. 10"
-                                value={formData.maxQty}
-                                onChange={handleChange}
-                            />
-                        </Grid>
-                    </Grid>
-
-                    {/* Description */}
-                    <Grid item xs={12} sx={{ mb: 2 }} container alignItems="center">
-                        <Grid item xs={12} md={3}><Label text="Description *" /></Grid>
-                        <Grid item xs={12} md={9}>
-                            <TextField
-                                fullWidth
-                                name="description"
-                                placeholder="Enter ticket description"
-                                value={formData.description}
-                                onChange={handleChange}
-                            />
-                        </Grid>
-                    </Grid>
-
-                    {/* Start and End Date */}
-                    <Grid item xs={12} sx={{ mb: 2 }} container alignItems="center">
-                        <Grid item xs={12} md={3}><Label text="Start Date *" /></Grid>
-                        <Grid item xs={12} md={4}>
-                            <DatePicker
-                                value={formData.startDate}
-                                onChange={(newValue) =>
-                                    setFormData((prev) => ({ ...prev, startDate: newValue }))
-                                }
-                                minDate={minStartDate}
-                                renderInput={(params) => (
-                                    <TextField
-                                        {...params}
-                                        fullWidth
-                                        error={!!errors.startDate}
-                                        helperText={errors.startDate}
-                                    />
-                                )}
-                            />
-                        </Grid>
-                        <Grid item xs={12} md={2} sx={{ ml: 8 }} ><Label text="End Date *" /></Grid>
-                        <Grid item xs={12} md={3}>
-                            <DatePicker
-                                value={formData.endDate}
-                                onChange={(newValue) =>
-                                    setFormData((prev) => ({ ...prev, endDate: newValue }))
-                                }
-                                minDate={minEndDate}
-                                renderInput={(params) => (
-                                    <TextField
-                                        {...params}
-                                        fullWidth
-                                        error={!!errors.endDate}
-                                        helperText={errors.endDate}
-                                    />
-                                )}
-                            />
-                        </Grid>
-                    </Grid>
-
-                    {/* Show Remaining Qty */}
-                    <Grid item xs={12} sx={{ mb: 2 }} container alignItems="center">
-                        <Grid item xs={12} md={3}><Label text="Show Remaining Qty" /></Grid>
-                        <Grid item xs={12} md={9}>
-                            <FormControlLabel
-                                control={
-                                    <Switch
-                                        checked={formData.showRemaining}
-                                        onChange={handleToggle('showRemaining')}
-                                    />
-                                }
-                                label=""
-                            />
-                        </Grid>
-                    </Grid>
-
-                    {/* Team Registration */}
-                    <Grid item xs={12} sx={{ mb: 2 }} container alignItems="center">
-                        <Grid item xs={12} md={3}><Label text="Team Registration" /></Grid>
-                        <Grid item xs={12} md={9}>
-                            <FormControlLabel
-                                control={
-                                    <Switch
-                                        checked={formData.teamRegistration}
-                                        onChange={handleToggle('teamRegistration')}
-                                    />
-                                }
-                                label=""
-                            />
-                        </Grid>
-                    </Grid>
-
-                    {/* Buttons */}
-                    <Grid item xs={12} container alignItems="center" gap={8} mt={2} borderTop={1} borderColor={"#E9EAEB"} paddingTop={2} >
-                        <Button variant="outlined" color="inherit" minWidth={"14vw"}>
-                            Cancel
-                        </Button>
-                        <Button variant="contained" sx={{ backgroundColor: '#4CAF50' }} minWidth={"14vw"}>
-                            Next
-                        </Button>
-                    </Grid>
-                </Grid>
-            </Box>
-        </LocalizationProvider>
+      <Box p={3} bgcolor="#fff" borderRadius={2}>
+        <Typography mb={2}>
+          Ticket tiers for event {eventName && <strong>{eventName}</strong>}
+        </Typography>
+        <TableContainer component={Paper}>
+          <Table size="small">
+            <TableHead>
+              <TableRow>
+                <TableCell>Name</TableCell>
+                <TableCell>Description</TableCell>
+                <TableCell>Price</TableCell>
+                <TableCell>Capacity</TableCell>
+                <TableCell>Perks</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {tiers.map((t, i) => (
+                <TableRow key={i}>
+                  <TableCell>{t.name}</TableCell>
+                  <TableCell>{t.description || "—"}</TableCell>
+                  <TableCell>{t.price}</TableCell>
+                  <TableCell>{t.capacity}</TableCell>
+                  <TableCell>
+                    {Array.isArray(t.perks) ? t.perks.join(", ") : t.perks}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+        <Box mt={2} display="flex" justifyContent="flex-end">
+          <Button variant="contained" onClick={() => setIsEditing(true)}>
+            Edit Tiers
+          </Button>
+        </Box>
+      </Box>
     );
+  }
+
+  return (
+    <LocalizationProvider dateAdapter={AdapterDateFns}>
+      <Box p={3} bgcolor="#fff" borderRadius={2}>
+        <Typography mb={2}>
+          Editing tiers for event {eventName && <strong>{eventName}</strong>}
+        </Typography>
+        {tiers.map((tier, idx) => (
+          <Box key={idx} mb={4} p={2} border="1px solid #eee" borderRadius={1}>
+            <Grid container spacing={2} alignItems="center">
+              <Grid item xs={11}>
+                <Typography>Tier #{idx + 1}</Typography>
+              </Grid>
+              <Grid item xs={1}>
+                {tiers.length > 1 && (
+                  <IconButton onClick={() => handleRemoveTier(idx)}>
+                    <DeleteIcon fontSize="small" />
+                  </IconButton>
+                )}
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <TextField
+                  label="Name"
+                  fullWidth
+                  value={tier.name}
+                  error={!!errors[`name${idx}`]}
+                  helperText={errors[`name${idx}`]}
+                  onChange={(e) => handleTierChange(idx, "name", e.target.value)}
+                />
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <TextField
+                  label="Description"
+                  fullWidth
+                  value={tier.description}
+                  onChange={(e) =>
+                    handleTierChange(idx, "description", e.target.value)
+                  }
+                />
+              </Grid>
+              <Grid item xs={12} md={4}>
+                <TextField
+                  label="Price"
+                  type="number"
+                  fullWidth
+                  value={tier.price}
+                  error={!!errors[`price${idx}`]}
+                  helperText={errors[`price${idx}`]}
+                  onChange={(e) =>
+                    handleTierChange(idx, "price", e.target.value)
+                  }
+                />
+              </Grid>
+              <Grid item xs={12} md={4}>
+                <TextField
+                  label="Capacity"
+                  type="number"
+                  fullWidth
+                  value={tier.capacity}
+                  error={!!errors[`capacity${idx}`]}
+                  helperText={errors[`capacity${idx}`]}
+                  onChange={(e) =>
+                    handleTierChange(idx, "capacity", e.target.value)
+                  }
+                />
+              </Grid>
+              <Grid item xs={12} md={4}>
+                <TextField
+                  label="Perks (comma-separated)"
+                  fullWidth
+                  value={tier.perks}
+                  onChange={(e) =>
+                    handleTierChange(idx, "perks", e.target.value)
+                  }
+                />
+              </Grid>
+            </Grid>
+          </Box>
+        ))}
+        <Box display="flex" gap={2} mb={2}>
+          <Button variant="outlined" onClick={handleAddTier}>
+            + Add another tier
+          </Button>
+        </Box>
+        <Box display="flex" justifyContent="flex-end" gap={2}>
+          <Button variant="outlined" onClick={() => setIsEditing(false)}>
+            Cancel
+          </Button>
+          <Button variant="contained" onClick={handleSubmit}>
+            Save Tiers
+          </Button>
+        </Box>
+      </Box>
+    </LocalizationProvider>
+  );
 }

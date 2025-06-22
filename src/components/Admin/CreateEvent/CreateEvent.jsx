@@ -21,7 +21,7 @@ const CreateEvent = () => {
         severity: 'success',
     });
 
-    const userId = context.userId || "681bc76f713723b2769a6bf5";
+    const userId = context.userId ;
 
     const [formData, setFormData] = useState({
         name: '',

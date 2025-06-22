@@ -1,56 +1,67 @@
-import React, { useContext, useState } from "react";
+import React, { createContext, useContext, useEffect, useState } from "react";
 
-const GlobalContext = React.createContext();
+const GlobalContext = createContext({});
 
 export function useGlobalInfo() {
-    return useContext(GlobalContext);
+  return useContext(GlobalContext);
 }
 
 export function GlobalProvider({ children }) {
-    const [loginFlow, setLoginFLow] = useState(() => {
-        return localStorage.getItem("isLoggedIn") === "true";
-    });
+  const [loginFlow, setLoginFlow] = useState(() =>
+    localStorage.getItem("isLoggedIn") === "true"
+  );
 
-    const [userType, setUserType] = useState(() => {
-        return localStorage.getItem("userType") || null;
-    });
+  const [userType, setUserType] = useState(() =>
+    localStorage.getItem("userType") || null
+  );
 
-    const [userId, setUserId] = useState(() => {
-        return localStorage.getItem("userId") || null;
-    });
+  const [userId, setUserId] = useState(() =>
+    localStorage.getItem("userId") || null
+  );
 
-    const [event, setEvent] = useState([]);
+  const [event, setEvent] = useState([]);
 
-    const changeLoginFlow = (new_state) => {
-        localStorage.setItem("isLoggedIn", new_state);
-        setLoginFLow(new_state);
-    };
+  // Log whenever `event` changes
+  useEffect(() => {
+    console.log("[GlobalContext] event state updated:", event);
+  }, [event]);
 
-    const changeUserType = (new_state) => {
-        localStorage.setItem("userType", new_state);
-        setUserType(new_state);
-    };
+  const changeLoginFlow = (newState) => {
+    localStorage.setItem("isLoggedIn", newState);
+    setLoginFlow(newState);
+  };
 
-    const changeUserId = (new_state) => {
-        localStorage.setItem("userId", new_state);
-        setUserId(new_state);
-    };
+  const changeUserType = (newState) => {
+    localStorage.setItem("userType", newState);
+    setUserType(newState);
+  };
 
-    return (
-        <GlobalContext.Provider
-            value={{
-                loginFlow,
-                changeLoginFlow,
-                userType,
-                changeUserType,
-                userId,
-                changeUserId,
-                event,
-                changeEvent: setEvent
-            }}
-        >
-            {children}
-        </GlobalContext.Provider>
-    );
+  const changeUserId = (newState) => {
+    localStorage.setItem("userId", newState);
+    setUserId(newState);
+  };
+
+  const changeEvent = (newEvent) => {
+    console.group("[GlobalContext] changeEvent called");
+  console.trace("payload:", newEvent);
+  console.groupEnd();
+    setEvent(newEvent);
+  };
+
+  return (
+    <GlobalContext.Provider
+      value={{
+        loginFlow,
+        changeLoginFlow,
+        userType,
+        changeUserType,
+        userId,
+        changeUserId,
+        event,
+        changeEvent,
+      }}
+    >
+      {children}
+    </GlobalContext.Provider>
+  );
 }
-

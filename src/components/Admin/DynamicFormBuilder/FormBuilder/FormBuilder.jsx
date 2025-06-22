@@ -43,6 +43,7 @@ export default function FormBuilder() {
         const type = e.dataTransfer.getData('field-type');
         const newField = getDefaultFieldSchema(type);
         setFields([...fields, newField]);
+        
     };
 
     const handleReorder = (result) => {
@@ -75,11 +76,11 @@ export default function FormBuilder() {
 
         try {
             const body = {
-                eventId: context?.event._id,
+                eventId: context?.event,
                 fields: schema
             };
 
-            const response = await fetch(`${API_ROUTE}/api/v1/even`, {
+            const response = await fetch(`${API_ROUTE}/api/v1/event/registration-form`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

@@ -34,33 +34,15 @@ function getComparator(order, orderBy) {
 const Dashboard = () => {
     const navigate = useNavigate();
     const context = useGlobalInfo();
-    const userId = context?.userId || "681bc76f713723b2769a6bf5";
+    const userId = context?.userId;
     const [order, setOrder] = useState('asc');
     const [orderBy, setOrderBy] = useState('name');
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(5);
     const [events, setEvents] = useState([]);
+    
 
-    const eventPayload = [{
-        cover_image: "https://res.cloudinary.com/dovrpnbxe/image/upload/v1747848227/cx1sxhgj7qigcsbh61gc.jpg",
-        description: "asdfasdf",
-        end_date: "2025:05:22",
-        end_time: "23:00",
-        event_images: [
-            "https://res.cloudinary.com/dovrpnbxe/image/upload/v1747848228/inpjgb3qysrzvman4cuw.jpg",
-            "https://res.cloudinary.com/dovrpnbxe/image/upload/v1747848229/upjkuudpbge9ocigeh2u.jpg",
-            "https://res.cloudinary.com/dovrpnbxe/image/upload/v1747848229/pbbucoabh47qtt2y6ibt.jpg"
-        ],
-        food_tracking: true,
-        gift_tracking: true,
-        location: "chennai",
-        logo_image: "https://res.cloudinary.com/dovrpnbxe/image/upload/v1747848227/q9baewl0z1k9trnay0zc.jpg",
-        name: "event_102",
-        public_event: true,
-        start_date: "2025:05:22",
-        start_time: "19:00",
-        user: "681bc76f713723b2769a6bf5"
-    }];
+    
 
     useEffect(() => {
         if (!userId) return;
@@ -94,15 +76,19 @@ const Dashboard = () => {
 
     const handleEdit = (eventData) => {
         console.log('Edit', eventData);
-        // navigate to edit page if needed
+        
     };
 
     const handleDelete = (eventData) => {
         console.log('Delete', eventData);
-        // handle delete logic
+        
     };
+      useEffect(() => {
+    console.log("Global event is now:", context.event);
+  }, [context.event]);
 
     const handleClick = (id) => {
+        context.changeEvent(id);
         navigate(`/event-dashboard/event/${id}`)
     };
 
@@ -194,7 +180,7 @@ const Dashboard = () => {
         paginatedEvents.map((row, index) => (
             <TableRow key={index}>
                 <TableCell onClick={() => handleClick(row._id)} className='cursor-pointer'>{row.name}</TableCell>
-                <TableCell>{new Date(row.startDate).toLocaleDateString()}</TableCell>
+                <TableCell>{new Date(row.start_date).toLocaleDateString()}</TableCell>
                 <TableCell>{new Date(row.end_date).toLocaleDateString()}</TableCell>
                 <TableCell>{row.privateEvent ? 'Yes' : 'No'}</TableCell>
                 <TableCell>{row.publicEvent ? 'Yes' : 'No'}</TableCell>
@@ -216,7 +202,7 @@ const Dashboard = () => {
                                 </Table>
                             </TableContainer>
 
-                            {/* Pagination */}
+                      
                             <TablePagination
                                 component="div"
                                 count={events.length}

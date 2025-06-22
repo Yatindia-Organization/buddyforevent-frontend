@@ -7,18 +7,18 @@ import InputAdornment from "@mui/material/InputAdornment";
 import TextField from "@mui/material/TextField";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import { Turnstile } from "@marsidev/react-turnstile";
-import { useNavigate } from "react-router-dom";
+import { redirect } from "react-router-dom";
 import { useGlobalInfo } from "../../contexts/globalContext";
 
 const CreateAccountForm = () => {
   const context = useGlobalInfo();
-  const navigate = useNavigate();
 
   const [form, setForm] = useState({
     name: "",
     phone_number: "",
     company_name: "",
     company_gst_number: "",
+    location: "",
     email: "",
     password: "",
     confirmPassword: "",
@@ -48,9 +48,11 @@ const CreateAccountForm = () => {
     if (!/^\d{10}$/.test(form.phone_number)) newErrors.phone_number = "Valid 10-digit number required";
     if (!form.company_name) newErrors.company_name = "Company name is required";
     if (!form.company_gst_number) newErrors.company_gst_number = "Company GST number is required";
+    if (!form.location) newErrors.location = "Location is required";
     if (!/\S+@\S+\.\S+/.test(form.email)) newErrors.email = "Invalid email";
     if (!form.password.match(/^(?=.*[A-Z])(?=.*\d).{8,}$/)) newErrors.password = "Min 8 chars, 1 uppercase, 1 number";
     if (form.password !== form.confirmPassword) newErrors.confirmPassword = "Passwords must match";
+    // if (!captchaToken) newErrors.captcha = "Please complete the CAPTCHA";  //disabling captcha for the case of localhost 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -95,8 +97,8 @@ const CreateAccountForm = () => {
 
           setSnackbar({ open: true, message: "Account created successfully!", severity: "success" });
           setTimeout(() => {
-            navigate("/");
-          }, 600);
+            redirect("/");
+          }, 1000);
         } else {
           setSnackbar({ open: true, message: data.message || "Failed to create account", severity: "error" });
         }
@@ -114,12 +116,15 @@ const CreateAccountForm = () => {
       phone: /^\d{10}$/.test(form.phone_number),
       company: form.company_name.trim().length > 0,
       gst: form.company_gst_number.trim().length > 0,
+      location: form.location.trim().length > 0,
       email: /\S+@\S+\.\S+/.test(form.email),
       password: form.password.length > 0,
       confirmMatch: form.password === form.confirmPassword,
+      // captcha: !!captchaToken,   // disabled the captcha to work in localhost 
       captcha: true,
       loading: !loading
     };
+    console.log("Validation Status:", conditions);
     return Object.values(conditions).every(Boolean);
   };
 
@@ -140,13 +145,13 @@ const CreateAccountForm = () => {
         <h2 className="text-2xl font-bold mb-2">Create Account</h2>
         <p className="mb-6 text-sm">Please fill in your details to get started.</p>
 
-        {["name", "phone_number", "company_name", "company_gst_number", "email"].map((field) => (
+        {["name", "phone_number", "company_name", "company_gst_number", "location", "email"].map((field) => (
           <div className="mb-[2vw]" key={field}>
             <TextField
               fullWidth
               label={field.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())}
               name={field}
-              type="text"
+              type={field === "phone_number" ? "text" : "text"}
               inputMode={field === "phone_number" ? "numeric" : undefined}
               value={form[field]}
               onChange={handleChange}

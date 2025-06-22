@@ -128,10 +128,10 @@ export default function AddParticipants() {
 
             <Paper elevation={3} sx={{ p: 4, mt: 4 }}>
                 <Typography variant="body2" sx={{ mb: 1 }}>
-                    NOTE: Please download and use the sample CSV file.
+                    NOTE: Please download and use the Sample Excel file.
                 </Typography>
                 <Button onClick={handleDownloadTemplate} variant="text" sx={{ textTransform: 'none', mb: 2 }}>
-                    Download sample CSV
+                    Download Sample Excel File
                 </Button>
                 <Typography variant="caption" sx={{ color: 'red', mb: 2, display: 'block' }}>
                     Fill the downloaded file and upload it with your participant data.

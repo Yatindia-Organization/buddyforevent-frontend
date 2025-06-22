@@ -29,7 +29,7 @@ export default function DraggableField({ field, onConfigure, onDelete }) {
 
                 <div className="flex items-center gap-3">
                     <button onClick={() => onConfigure(field.id)} className="text-gray-600 hover:text-blue-600">
-                        <img src="/svg/setting.svg" alt="SettingsLogo" className="h-4" />
+                        <img src="/svg/setting.svg" alt="SettingsLogo" className="h-4  filter brightness-0" />
                     </button>
                     <button onClick={() => onDelete(field.id)} className="text-red-500 hover:text-red-700">
                         <img src="/svg/delete.svg" alt="DeleteLogo" className="h-4" />

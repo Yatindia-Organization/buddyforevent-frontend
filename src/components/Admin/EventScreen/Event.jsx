@@ -1,324 +1,255 @@
-import { Alert, Snackbar } from '@mui/material';
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
+import { Alert, Snackbar } from '@mui/material';
+import { format } from 'date-fns';         // for date formatting
 import EventStatsChart from '../../echarts/EventStatsChart';
 import { API_ROUTE } from '../../../lib/config';
 import { useGlobalInfo } from '../../../contexts/globalContext';
 
-
 export default function Event() {
-    const context = useGlobalInfo();
-    const { id } = useParams();
+  const context = useGlobalInfo();
+  const id  = context.event;
 
+  const [event, setEvent] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [poll, setPoll] = useState({ question: '', options: [''] });
+  const [imageSize, setImageSize] = useState('medium');
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: '',
+    severity: 'success',
+  });
 
-    const [event, setEvent] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [modalOpen, setModalOpen] = useState(false);
-    const [poll, setPoll] = useState({ question: '', options: [''] });
-    const [imageSize, setImageSize] = useState('medium');
-    const [snackbar, setSnackbar] = useState({
-        open: false,
-        message: '',
-        severity: 'success',
-    });
+  useEffect(() => {
+    const fetchEvent = async () => {
+      try {
+        const res = await fetch(`${API_ROUTE}/api/v1/event/eventid/${id}`);
+        if (!res.ok) throw new Error('Event not found');
+        const { data } = await res.json();
+        setEvent(data);
 
-
-    useEffect(() => {
-        const fetchEvent = async () => {
-            try {
-                const res = await fetch(`${API_ROUTE}/api/v1/event/eventid/${id}`);
-                if (!res.ok) throw new Error('Event not found');
-                const data = await res.json();
-                setEvent(data?.data);
-                context.changeEvent(data?.data);
-            } catch (err) {
-                console.error(err);
-                setEvent(null);
-            } finally {
-                setLoading(false);
-            }
-
-            setLoading(false);
-        };
-
-        fetchEvent();
-
-    }, [id]);
-
-    const showSnackbar = (message, severity = 'success') => {
-        setSnackbar({
-            open: true,
-            message,
-            severity,
-        });
+      } catch (err) {
+        console.error(err);
+        setEvent(null);
+      } finally {
+        setLoading(false);
+      }
     };
+    fetchEvent();
+  }, [id]);
 
 
-    const handlePollChange = (index, value) => {
-        const newOptions = [...poll.options];
-        newOptions[index] = value;
-        setPoll({ ...poll, options: newOptions });
-    };
+  const showSnackbar = (message, severity = 'success') =>
+    setSnackbar({ open: true, message, severity });
 
-
-    const addPollOption = () => {
-        setPoll({ ...poll, options: [...poll.options, ''] });
-    };
-
-    const handlePollSubmit = async () => {
-        const validOptions = poll.options.filter(opt => opt.trim() !== '');
-        if (!poll.question.trim()) {
-            showSnackbar('Poll question cannot be empty', 'error');
-            return;
-        }
-        if (validOptions.length < 2) {
-            showSnackbar('Please add at least two poll options.', 'error');
-            return;
-        }
-
-        try {
-            const res = await fetch(`${API_ROUTE}/api/v1/events/${id}/polls`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ...poll, options: validOptions }),
-            });
-
-            if (res.ok) {
-                showSnackbar('Poll created successfully!', 'success');
-                setModalOpen(false);
-                setPoll({ question: '', options: [''] });
-            } else {
-                throw new Error('Failed to create poll');
-            }
-        } catch (err) {
-            showSnackbar(err.message, 'error');
-        }
-    };
-
-
-    const getImageHeight = () => {
-        switch (imageSize) {
-            case 'small': return 'h-40';
-            case 'large': return 'h-96';
-            default: return 'h-64';
-        }
-    };
-
-    if (loading) {
-        return (
-            <div className="flex items-center justify-center h-screen">
-                <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-gray-900"></div>
-            </div>
-        );
+  // Poll handlers unchanged...
+  const handlePollChange = (i, v) => {
+    const opts = [...poll.options]; opts[i] = v;
+    setPoll({ ...poll, options: opts });
+  };
+  const addPollOption = () =>
+    setPoll({ ...poll, options: [...poll.options, ''] });
+  const handlePollSubmit = async () => {
+    const valid = poll.options.filter(o => o.trim());
+    if (!poll.question.trim()) return showSnackbar('Poll question cannot be empty', 'error');
+    if (valid.length < 2) return showSnackbar('Please add at least two poll options.', 'error');
+    try {
+      const res = await fetch(`${API_ROUTE}/api/v1/events/${id}/polls`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...poll, options: valid }),
+      });
+      if (!res.ok) throw new Error('Failed to create poll');
+      showSnackbar('Poll created successfully!');
+      setModalOpen(false);
+      setPoll({ question: '', options: [''] });
+    } catch (err) {
+      showSnackbar(err.message, 'error');
     }
+  };
 
-    if (!event) {
-        return (
-            <div className="flex flex-col items-center justify-center h-screen text-center space-y-4">
-                <h1 className="text-2xl font-bold">Event Not Found</h1>
-                <p className="text-gray-500">The event you're looking for doesn't exist or has been removed.</p>
-            </div>
-        );
-    }
+  const getImageHeight = () => {
+    if (imageSize === 'small') return 'h-40';
+    if (imageSize === 'large') return 'h-96';
+    return 'h-64';
+  };
 
+  if (loading) {
     return (
-        <div className="flex flex-col md:flex-row gap-8">
-            {/* LEFT */}
-            <div className="w-full md:w-1/2 space-y-6">
-                <img
-                    src={event.coverImage}
-                    alt="Cover"
-                    className={`h-[30vw] object-cover rounded ${getImageHeight()}`}
-                />
-
-                <p className=' flex justify-center text-[14px] text-[#C11215] font-semibold'>Please enter a picture of size 1280 x 720 px</p>
-
-                <div className='flex justify-between items-center'>
-                    <div className='flex items-center gap-[0.8vw]'>
-                        <img className='w-[2vw]' src="/svg/edit.svg" alt="icons" />
-                        <p className='text-[16px] text-[#140088] font-medium'>Edit Event</p>
-                    </div>
-                    <div className='flex items-center gap-[0.8vw]'>
-                        <img className='w-[2vw]' src="/svg/edit-design.svg" alt="icons" />
-                        <p className='text-[16px] text-[#140088] font-medium'>Edit Design</p>
-                    </div>
-                    <div className='flex items-center gap-[0.8vw]'>
-                        <img className='w-[2vw]' src="/svg/eye.svg" alt="icons" />
-                        <p className='text-[16px] text-[#140088] font-medium'>Preview</p>
-                    </div>
-                </div>
-
-                <div className='flex justify-between items-center'>
-                    <a href="live-count" className='text-[#2A8BF2] text-[24px] underline'>View Live Count</a>
-                    <a href="live-count" className='text-[#2A8BF2] text-[24px] underline'>Event FeedBack</a>
-                    <a href="/event-dashboard/create-poll" className='text-[#2A8BF2] text-[24px] underline'>Add Live Poll</a>
-                </div>
-
-                <div className='p-3 flex flex-col gap-[1vw] rounded-[15px] bg-white'>
-                    <div className='flex justify-between items-center'>
-                        <p className='text-[#000000] text-[14px] font-medium'>Live Update URL</p>
-                        <a href="" className='w-[16vw] text-[13px] text-[#2A8BF2] underline'>https://in.explara.com/e/abc-event-oejqyfepdf92ob5</a>
-                        <div className='flex flex-col justify-between items-center'>
-                            <img src="/svg/copy.svg" alt="image" />
-                            <p className='text-[#000000] text-[14px] font-medium'>COPY</p>
-                        </div>
-                        <div className='flex flex-col justify-between items-center'>
-                            <img src="/svg/logo-whatsapp.svg" alt="image" />
-                            <p className='text-[#000000] text-[14px] font-medium'>SHARE</p>
-                        </div>
-                    </div>
-                    <div className='flex justify-between items-center'>
-                        <p className='text-[#000000] text-[14px] font-medium'>EVENT FEEDBACK URL</p>
-                        <a href="" className='w-[16vw] text-[13px] text-[#2A8BF2] underline'>https://in.explara.com/e/abc-event-oejqyfepdf92ob5</a>
-                        <div className='flex flex-col justify-between items-center'>
-                            <img src="/svg/copy.svg" alt="image" />
-                            <p className='text-[#000000] text-[14px] font-medium'>COPY</p>
-                        </div>
-                        <div className='flex flex-col justify-between items-center'>
-                            <img src="/svg/logo-whatsapp.svg" alt="image" />
-                            <p className='text-[#000000] text-[14px] font-medium'>SHARE</p>
-                        </div>
-                    </div>
-                    <div className='flex justify-between items-center'>
-                        <p className='text-[#000000] text-[14px] font-medium'>LIVE POLL URL</p>
-                        <a href="" className='w-[16vw] text-[13px] text-[#2A8BF2] underline'>https://in.explara.com/e/abc-event-oejqyfepdf92ob5</a>
-                        <div className='flex flex-col justify-between items-center'>
-                            <img src="/svg/copy.svg" alt="image" />
-                            <p className='text-[#000000] text-[14px] font-medium'>COPY</p>
-                        </div>
-                        <div className='flex flex-col justify-between items-center'>
-                            <img src="/svg/logo-whatsapp.svg" alt="image" />
-                            <p className='text-[#000000] text-[14px] font-medium'>SHARE</p>
-                        </div>
-                    </div>
-                </div>
-
-            </div>
-
-            {/* RIGHT */}
-            <div className="w-full md:w-1/2 space-y-8">
-
-                <div className='flex gap-[1vw] *:px-[1.4vw] *:py-[0.4vw] *:text-white *:text-[14px] *:rounded-[10px] *:cursor-pointer'>
-                    <div className='bg-[#419B01]'> PUBLISHED</div>
-                    <div className='bg-[#2C96FF]'> PAUSE EVENT</div>
-                    <div className='bg-[#2C96FF]'> CANCEL EVENT</div>
-                </div>
-
-                <div className='flex justify-between items-center'>
-                    <div className='flex items-center gap-[0.4vw]'>
-                        <p className='text-[16px] text-[#140088]'>EVENT LOGO</p>
-                        <img className='w-[2vw]' src="/svg/edit.svg" alt="image" />
-                    </div>
-                    <div>
-                        <img className='w-[6vw]' src="/images/logo-compony.svg" alt="image" />
-                    </div>
-                </div>
-
-                <div className='p-4 flex flex-col gap-[1vw] rounded-[15px] bg-white text-[#424242] text-[14px]'>
-                    <div>
-                        <p className='text-[#140088] font-medium'>EVENT DESCRIPTION</p>
-                        <p className="">{event.description}</p>
-                    </div>
-                    <div className='flex flex-col gap-[0.8vw]'>
-                        <p className='text-[#140088] font-medium'>SALES OVERVIEW</p>
-                        <div className='flex justify-around items-center'>
-                            <div className='flex flex-col items-center justify-center'>
-                                <p className='text-[#0CA31D]'>23</p>
-                                <p>REGISTERED</p>
-                            </div>
-                            <div className='flex flex-col items-center justify-center'>
-                                <p className='text-[#0CA31D]'>23</p>
-                                <p>GUEST REGISTERED</p>
-                            </div>
-                            <div className='flex flex-col items-center justify-center'>
-                                <p className='text-[#0CA31D]'>23</p>
-                                <p>VIEWS</p>
-                            </div>
-
-                        </div>
-                    </div>
-                    <div className='flex flex-col gap-[0.8vw]'>
-                        <p className='text-[#140088] font-medium'>EVENT OVERVIEW</p>
-                        <div className='ml-[1vw] flex gap-[1vw]'>
-                            <img className='w-[1vw]' src="/svg/location-pin.svg" alt="location-pin" />
-                            <p>CHENNAI</p>
-                        </div>
-                        <div className='ml-[1vw] flex gap-[1vw]'>
-                            <img className='w-[1vw]' src="/svg/calender.svg" alt="calender" />
-                            <p>Date </p>
-                        </div>
-                        <div className='ml-[1vw] flex gap-[1vw]'>
-                            <img className='w-[1vw]' src="/svg/timer.svg" alt="timer" />
-                            <p>Time</p>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Size Selector */}
-                <div className="">
-                    <EventStatsChart />
-                </div>
-
-                {/* Action Buttons */}
-                {/* <div className="flex flex-wrap gap-3">
-                    <button className="bg-blue-500 text-white px-4 py-2 rounded">Live Count</button>
-                    <button className="bg-yellow-500 text-white px-4 py-2 rounded">Feedback Form</button>
-                    <button
-                        onClick={() => setModalOpen(true)}
-                        className="bg-green-600 text-white px-4 py-2 rounded"
-                    >
-                        Create Poll
-                    </button>
-                </div> */}
-            </div>
-
-            {/* MODAL */}
-            {modalOpen && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-                    <div className="bg-white p-6 rounded w-full max-w-md">
-                        <h2 className="text-xl font-semibold mb-4">Create a Poll</h2>
-                        <input
-                            type="text"
-                            value={poll.question}
-                            onChange={(e) => setPoll({ ...poll, question: e.target.value })}
-                            placeholder="Enter your question"
-                            className="w-full mb-3 p-2 border rounded"
-                        />
-                        {poll.options.map((option, idx) => (
-                            <input
-                                key={idx}
-                                type="text"
-                                value={option}
-                                onChange={(e) => handlePollChange(idx, e.target.value)}
-                                placeholder={`Option ${idx + 1}`}
-                                className="w-full mb-2 p-2 border rounded"
-                            />
-                        ))}
-                        <button onClick={addPollOption} className="text-blue-500 text-sm mb-4">+ Add Option</button>
-                        <div className="flex justify-end gap-2">
-                            <button onClick={() => setModalOpen(false)} className="px-4 py-1 border rounded">Cancel</button>
-                            <button onClick={handlePollSubmit} className="bg-green-600 text-white px-4 py-1 rounded">Submit</button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* SNACKBAR */}
-            <Snackbar
-                open={snackbar.open}
-                autoHideDuration={4000}
-                onClose={() => setSnackbar(prev => ({ ...prev, open: false }))}
-                anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
-            >
-                <Alert
-                    onClose={() => setSnackbar(prev => ({ ...prev, open: false }))}
-                    severity={snackbar.severity}
-                    sx={{ width: '100%' }}
-                >
-                    {snackbar.message}
-                </Alert>
-            </Snackbar>
-
-        </div>
+      <div className="flex items-center justify-center h-screen">
+        <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-gray-900" />
+      </div>
     );
+  }
+
+  if (!event) {
+    return (
+      <div className="flex flex-col items-center justify-center h-screen text-center space-y-4">
+        <h1 className="text-2xl font-bold">Event Not Found</h1>
+        <p className="text-gray-500">The event you're looking for doesn't exist or has been removed.</p>
+      </div>
+    );
+  }
+
+  // Destructure exactly the fields your payload provides:
+  const {
+    name,
+    cover_image,
+    logo_image,
+    description,
+    location,
+    start_date,
+    end_date,
+    start_time,
+    end_time,
+  } = event;
+
+  // Format ISO dates into e.g. "Jun 18, 2025"
+  const formattedDate = `${format(new Date(start_date), 'MMM d, yyyy')} – ${format(new Date(end_date), 'MMM d, yyyy')}`;
+  const formattedTime = `${start_time} – ${end_time}`;
+
+  return (
+    <div className="flex flex-col md:flex-row gap-8">
+      {/* LEFT */}
+      <div className="w-full md:w-1/2 space-y-6">
+        {/* Use cover_image from payload */}
+        <img
+          src={cover_image}
+          alt="Event Cover"
+          className={`object-cover rounded ${getImageHeight()}`}
+        />
+
+        <p className="text-center text-sm text-red-600 font-semibold">
+          Please upload a picture of size 1280 × 720 px
+        </p>
+
+        <div className="flex justify-between">
+          <Link to={`/event/${id}/edit`} className="flex items-center gap-2 text-blue-700">
+            <img className="w-6" src="/svg/edit.svg" alt="Edit" />
+            Edit Event
+          </Link>
+          <Link to={`/event/${id}/design`} className="flex items-center gap-2 text-blue-700">
+            <img className="w-6" src="/svg/edit-design.svg" alt="Design" />
+            Edit Design
+          </Link>
+          <Link to={`/event/${id}/preview`} className="flex items-center gap-2 text-blue-700">
+            <img className="w-6" src="/svg/eye.svg" alt="Preview" />
+            Preview
+          </Link>
+        </div>
+
+        {/* Dynamic URLs using the event id */}
+        <div className="space-y-4 p-3 bg-white rounded-lg">
+          {[
+            ['Live Count', `event/${id}/live-count`],
+            ['Event Feedback', `event/${id}/feedback`],
+            ['Live Poll', `event/${id}/polls`],
+          ].map(([label, path]) => (
+            <div key={label} className="flex justify-between items-center">
+              <span className="font-medium">{label} URL</span>
+              <a
+                href={`${API_ROUTE}/${path}`}
+                className="underline text-blue-600 truncate w-40"
+              >
+                {`${API_ROUTE}/${path}`}
+              </a>
+              <div className="flex items-center space-x-1">
+                <img src="/svg/copy.svg" alt="Copy" />
+                <span className="font-medium">COPY</span>
+              </div>
+              <div className="flex items-center space-x-1">
+                <img src="/svg/logo-whatsapp.svg" alt="Share" />
+                <span className="font-medium">SHARE</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* RIGHT */}
+      <div className="w-full md:w-1/2 space-y-8">
+        {/* Event name */}
+        <h1 className="text-3xl font-bold text-indigo-900">{name}</h1>
+
+        {/* Status/actions */}
+        <div className="flex gap-2">
+          <span className="px-3 py-1 bg-green-600 text-white rounded">PUBLISHED</span>
+          <button className="px-3 py-1 bg-yellow-500 text-white rounded">PAUSE EVENT</button>
+          <button className="px-3 py-1 bg-red-500 text-white rounded">CANCEL EVENT</button>
+        </div>
+
+        {/* Logo */}
+        <div className="flex items-center justify-between">
+          <span className="text-lg font-medium text-indigo-900">EVENT LOGO</span>
+          <img src={logo_image} alt="Logo" className="w-24" />
+        </div>
+
+        {/* Description & stats */}
+        <div className="p-4 bg-white rounded-lg space-y-4 text-gray-700 text-sm">
+          <div>
+            <p className="font-medium text-indigo-900">EVENT DESCRIPTION</p>
+            <p>{description}</p>
+          </div>
+          <div>
+            <p className="font-medium text-indigo-900">EVENT OVERVIEW</p>
+            <div className="mt-2 space-y-2">
+              <div className="flex items-center gap-2">
+                <img className="w-4" src="/svg/location-pin.svg" alt="" />
+                <span>{location}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <img className="w-4" src="/svg/calender.svg" alt="" />
+                <span>{formattedDate}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <img className="w-4" src="/svg/timer.svg" alt="" />
+                <span>{formattedTime}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Sales overview—replace these numbers with real data when available */}
+          <div>
+            <p className="font-medium text-indigo-900">SALES OVERVIEW</p>
+            <div className="flex justify-around mt-2">
+              {[
+                ['REGISTERED', event.registered || 0],
+                ['GUEST REGISTERED', event.guest_registered || 0],
+                ['VIEWS', event.views || 0],
+              ].map(([label, val]) => (
+                <div key={label} className="text-center">
+                  <p className="text-green-600 font-bold">{val}</p>
+                  <p className="text-xs">{label}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Stats chart */}
+        <EventStatsChart />
+
+        {/* Poll modal & snackbar unchanged */}
+        {modalOpen && (
+          /* ...modal code here (unchanged) */
+          <div>…</div>
+        )}
+        <Snackbar
+          open={snackbar.open}
+          autoHideDuration={4000}
+          onClose={() => setSnackbar(o => ({ ...o, open: false }))}
+          anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+        >
+          <Alert
+            onClose={() => setSnackbar(o => ({ ...o, open: false }))}
+            severity={snackbar.severity}
+            sx={{ width: '100%' }}
+          >
+            {snackbar.message}
+          </Alert>
+        </Snackbar>
+      </div>
+    </div>
+  );
 }

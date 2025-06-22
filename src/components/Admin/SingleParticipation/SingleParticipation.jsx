@@ -1,149 +1,268 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react'
 import {
-    Box,
-    Typography,
-    Divider,
-    Grid,
-    TextField,
-    MenuItem,
-    Button,
-    Paper,
-} from '@mui/material';
-import AccessTimeIcon from '@mui/icons-material/AccessTime';
-import EventNoteIcon from '@mui/icons-material/EventNote';
+  Box,
+  Typography,
+  TextField,
+  MenuItem,
+  Button,
+  Paper,
+  Checkbox,
+  FormControlLabel,
+  Stack,
+  Divider,
+  Snackbar,
+  Alert,
+} from '@mui/material'
+import { useGlobalInfo } from '../../../contexts/globalContext'
+import { API_ROUTE } from '../../../lib/config'
 
 export default function SingleParticipation() {
-    const [form, setForm] = useState({
-        name: '',
-        email: '',
-        mobile: '',
-        tickets: 0,
-    });
+  const { event: eventId } = useGlobalInfo()
+  const [schema, setSchema] = useState(null)
+  const [values, setValues] = useState({})
+  const [loading, setLoading] = useState(true)
 
-    const ticketOptions = Array.from({ length: 10 }, (_, i) => i); // 0-9
+  // Snackbar state
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: '',
+    severity: 'success',
+  })
 
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-        setForm((prev) => ({ ...prev, [name]: value }));
-    };
+  useEffect(() => {
+    if (!eventId) return
 
+    fetch(`${API_ROUTE}/api/v1/event/registration-form/eventId/${eventId}`)
+      .then((r) => r.json())
+      .then((forms) => {
+        if (!forms.length) {
+          setSchema(null)
+        } else {
+          const form = forms[0]
+          setSchema(form)
+          const initial = { visitorCount: 0 }
+          form.fields.forEach((f) => {
+            initial[f.id] = f.type === 'Checkbox' ? false : ''
+          })
+          setValues(initial)
+        }
+      })
+      .finally(() => setLoading(false))
+  }, [eventId])
+
+  const handleChange = (id, val) => {
+    setValues((v) => ({ ...v, [id]: val }))
+  }
+
+  const handleSubmit = () => {
+    if (!schema) return
+
+    const responses = schema.fields.map((f) => ({
+      fieldId: f.id,
+      value: values[f.id],
+    }))
+    const visitorCount = Number(values.visitorCount) || 0
+
+    fetch(`${API_ROUTE}/api/v1/event/form-submission`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        eventId,
+        formId: schema._id,
+        responses,
+        visitorCount,
+      }),
+    })
+      .then(async (res) => {
+        if (!res.ok) throw new Error(await res.text())
+        return res.json()
+      })
+      .then((data) => {
+        console.log('Submitted:', data)
+        setSnackbar({
+          open: true,
+          message: 'Registration submitted successfully!',
+          severity: 'success',
+        })
+        // Optionally clear or reset form here:
+        // setValues(prev => ({ ...prev, visitorCount: 0 }))
+      })
+      .catch((err) => {
+        console.error(err)
+        setSnackbar({
+          open: true,
+          message: `Submission failed: ${err.message}`,
+          severity: 'error',
+        })
+      })
+  }
+
+  const handleCloseSnackbar = () => {
+    setSnackbar((s) => ({ ...s, open: false }))
+  }
+
+  if (loading) return <Typography>Loading…</Typography>
+  if (!schema)
     return (
-        <Box sx={{ p: 4, bgcolor: '#f9f9f9', borderRadius: 2 }}>
-            {/* Header */}
-            <Typography variant="h5" fontWeight="bold" color="#9A93B3">
-                Single Participant Registration
-            </Typography>
-            <Typography variant="body2" sx={{ mb: 3 }}>
-                Issue tickets to your Participants without asking them to register online.
-            </Typography>
+      <Box p={4} textAlign="center">
+        <Typography variant="h6">No registration form found.</Typography>
+        <Button
+          variant="contained"
+          color="primary"
+          href="/event-dashboard/participant-registration"
+        >
+          Build a Registration Form
+        </Button>
+      </Box>
+    )
 
-            <Paper elevation={3} sx={{ p: 4, mt: 4 }}>
+  return (
+    <Box display="flex" justifyContent="center" p={3}>
+      <Paper elevation={3} sx={{ width: '100%', maxWidth: 400 }}>
+        <Box p={3}>
+          <Typography variant="h6" gutterBottom color="#9A93B3">
+            {schema.title || 'Register'}
+          </Typography>
+          <Typography variant="body2" mb={2}>
+            {schema.description}
+          </Typography>
 
-                {/* Top Info Row */}
-                <Grid container justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
-                    <Typography variant="h6">Choose Your</Typography>
-                    <Grid item display="flex" gap={2} alignItems="center">
-                        <Box display="flex" alignItems="center" gap={1}>
-                            <AccessTimeIcon fontSize="small" />
-                            <Typography variant="body2">08:00 PM - 08:00 PM</Typography>
-                        </Box>
-                        <Box display="flex" alignItems="center" gap={1}>
-                            <EventNoteIcon fontSize="small" color="error" />
-                            <Typography variant="body2" color="error">
-                                118 TICKET REMAINING
-                            </Typography>
-                        </Box>
-                    </Grid>
-                </Grid>
-
-                <Divider sx={{ mb: 3 }} color={"#9A93B3"} />
-
-                {/* Ticket Selection */}
-                <Grid container alignItems="center" spacing={2} sx={{ mb: 4 }}>
-                    <Grid item xs={12} md={6}>
-                        <Typography variant="body1" color="text.secondary">
-                            Select the number of ticket
-                        </Typography>
-                    </Grid>
-                    <Grid item xs={12} md={6}>
-                        <TextField
-                            fullWidth
-                            select
-                            label="Select"
-                            name="tickets"
-                            value={form.tickets}
-                            onChange={handleChange}
-                            sx={{
-                                '& fieldset': {
-                                    borderColor: 'purple',
-                                    borderStyle: 'dashed',
-                                },
-                            }}
-                        >
-                            {ticketOptions.map((num) => (
-                                <MenuItem key={num} value={num}>
-                                    {num}
-                                </MenuItem>
-                            ))}
-                        </TextField>
-                    </Grid>
-                </Grid>
-
-                {/* Buyer Details */}
-                <Typography variant="h6" sx={{ mb: 2 }}>
-                    Buyer Details
-                </Typography>
-
-                <Grid spacing={2} sx={{ mb: 4 }}>
-                    <Grid item xs={8} container sx={{ mb: 4 }}>
-                        <TextField
-                            fullWidth
-                            label="Name"
-                            name="name"
-                            placeholder="any"
-                            value={form.name}
-                            onChange={handleChange}
+          <Stack spacing={2}>
+            {schema.fields.map((f) => {
+              const common = {
+                key: f.id,
+                fullWidth: true,
+                size: 'small',
+                margin: 'dense',
+                variant: 'outlined',
+              }
+              switch (f.type) {
+                case 'Input Field':
+                case 'Email':
+                  return (
+                    <TextField
+                      {...common}
+                      type={f.type === 'Email' ? 'email' : 'text'}
+                      label={f.label}
+                      value={values[f.id]}
+                      onChange={(e) =>
+                        handleChange(f.id, e.target.value)
+                      }
+                    />
+                  )
+                case 'Textarea':
+                  return (
+                    <TextField
+                      {...common}
+                      multiline
+                      rows={3}
+                      label={f.label}
+                      value={values[f.id]}
+                      onChange={(e) =>
+                        handleChange(f.id, e.target.value)
+                      }
+                    />
+                  )
+                case 'Number Field':
+                  return (
+                    <TextField
+                      {...common}
+                      type="number"
+                      label={f.label}
+                      InputProps={{ inputProps: { min: 0 } }}
+                      value={values[f.id]}
+                      onChange={(e) =>
+                        handleChange(f.id, e.target.value)
+                      }
+                    />
+                  )
+                case 'Select Menu':
+                  return (
+                    <TextField
+                      {...common}
+                      select
+                      label={f.label}
+                      value={values[f.id]}
+                      onChange={(e) =>
+                        handleChange(f.id, e.target.value)
+                      }
+                    >
+                      {f.options.map((o) => (
+                        <MenuItem key={o} value={o}>
+                          {o}
+                        </MenuItem>
+                      ))}
+                    </TextField>
+                  )
+                case 'Checkbox':
+                  return (
+                    <FormControlLabel
+                      key={f.id}
+                      control={
+                        <Checkbox
+                          size="small"
+                          checked={values[f.id]}
+                          onChange={(e) =>
+                            handleChange(f.id, e.target.checked)
+                          }
                         />
-                    </Grid>
-                    <Grid item xs={8} container sx={{ mb: 4 }}>
-                        <TextField
-                            fullWidth
-                            label="Email"
-                            name="email"
-                            placeholder="any"
-                            value={form.email}
-                            onChange={handleChange}
-                        />
-                    </Grid>
-                    <Grid item xs={8} container sx={{ mb: 4 }}>
-                        <TextField
-                            fullWidth
-                            label="Mobile number"
-                            name="mobile"
-                            placeholder="any"
-                            value={form.mobile}
-                            onChange={handleChange}
-                        />
-                    </Grid>
-                </Grid>
+                      }
+                      label={f.label}
+                      sx={{ mt: 1 }}
+                    />
+                  )
+                default:
+                  return null
+              }
+            })}
 
-                <Divider sx={{ mb: 4 }} />
+            {/* Additional Visitors */}
+            <TextField
+              fullWidth
+              size="small"
+              margin="dense"
+              variant="outlined"
+              type="number"
+              label="Additional Visitors"
+              helperText="Enter extra guests (0 if none)."
+              InputProps={{ inputProps: { min: 0 } }}
+              value={values.visitorCount}
+              onChange={(e) =>
+                handleChange('visitorCount', e.target.value)
+              }
+            />
+          </Stack>
 
-                {/* Action Buttons */}
-                <Grid container justifyContent="flex-end" spacing={2}>
-                    <Grid item>
-                        <Button variant="outlined" color="inherit">
-                            Cancel
-                        </Button>
-                    </Grid>
-                    <Grid item>
-                        <Button variant="contained" sx={{ backgroundColor: '#4CAF50' }}>
-                            Proceed
-                        </Button>
-                    </Grid>
-                </Grid>
-            </Paper>
+          <Divider sx={{ my: 2 }} />
 
+          <Box display="flex" justifyContent="flex-end" gap={1}>
+            <Button size="small">Cancel</Button>
+            <Button
+              size="small"
+              variant="contained"
+              onClick={handleSubmit}
+            >
+              Proceed
+            </Button>
+          </Box>
         </Box>
-    );
+      </Paper>
+
+      {/* Snackbar */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={3000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert
+          onClose={handleCloseSnackbar}
+          severity={snackbar.severity}
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
+    </Box>
+  )
 }

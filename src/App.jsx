@@ -10,7 +10,7 @@ import CreateAccountForm from "./components/forms/CreateAccountForm.jsx";
 
 // Other pages 
 
-import Main from "./components/main/Main.jsx";
+import Main from "./components/main/Main.jsx";  
 import Dashboard from "./components/Admin/DashboardPage/Dashboard.jsx";
 import CreateEvent from "./components/Admin/CreateEvent/CreateEvent.jsx";
 import EventDashboard from "./components/Admin/EventDashboard.jsx/EventDashboard.jsx";
@@ -26,6 +26,7 @@ import SingleParticipation from "./components/Admin/SingleParticipation/SinglePa
 import Participants from "./components/Admin/Participants/Participants.jsx";
 import Settings from "./components/Admin/Settings/Settings.jsx";
 import CreatePoll from "./components/Admin/Poll/CreatePoll.jsx";
+import QRViewer from "./components/QrcodeViewer/qrcodeviewer.jsx";
 
 function App() {
   const context = useGlobalInfo();
@@ -35,12 +36,15 @@ function App() {
   return (
     <Router>
       <Routes>
+        <Route
+          path="/qr/:submissionId"
+          element={<QRViewer />}  
+        />
         {isLoggedIn ? (
           // Protected Routes (after login)
           <Route path="/" element={<Main />}>
             <Route index element={<Navigate to="dashboard" replace />} />
             <Route path="dashboard" element={<Dashboard />} />
-
             <Route path="/event-dashboard" element={<EventDashboard />} >
               <Route index element={<Navigate to="event/:id" replace />} />
               <Route path="event/:id" element={<Event />} />

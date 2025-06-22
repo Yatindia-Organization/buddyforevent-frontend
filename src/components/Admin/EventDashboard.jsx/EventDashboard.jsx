@@ -7,7 +7,7 @@ export default function EventDashboard() {
     const context = useGlobalInfo();
 
     const dashboardTabs = [
-        { name: "Event Dashboard", route: `event/${context.event._id}` },
+        { name: "Event Dashboard", route: `event/${context.event}` },
         { name: "Participant Registration", route: "participant-registration" },
         { name: "Bulk Ticket", route: "bulk-ticket" },
         { name: "Single Registration", route: "single-registration" },
@@ -30,7 +30,7 @@ export default function EventDashboard() {
                         key={tab.route}
                         to={`/event-dashboard/${tab.route}`}
                         className={({ isActive }) =>
-                            isActive || location.pathname === `/event-dashboard` && tab.route === `event/${context.event._id}`
+                            isActive || location.pathname === `/event-dashboard` && tab.route === `event/${context.event}`
                                 ? "text-blue-600 font-semibold border-b-2 border-blue-600 pb-1"
                                 : "text-gray-600 hover:text-blue-500"
                         }

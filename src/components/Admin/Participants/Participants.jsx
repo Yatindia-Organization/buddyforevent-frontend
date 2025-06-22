@@ -1,187 +1,219 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react'
 import {
-    Box,
-    Typography,
-    ToggleButton,
-    ToggleButtonGroup,
-    Table,
-    TableBody,
-    TableCell,
-    TableContainer,
-    TableHead,
-    TableRow,
-    Paper,
-    Select,
-    MenuItem,
-    Button
-} from '@mui/material';
-import { API_ROUTE } from '../../../lib/config';
-import { useGlobalInfo } from '../../../contexts/globalContext';
-
-// const participantData = [
-//     { name: 'Guest 2', entry: '09:00', exit: '18:00', gift: 'YES', food: 'YES' },
-//     { name: 'Guest', entry: '00:00', exit: '00:00', gift: 'NO', food: 'NO' },
-//     { name: 'Guest', entry: '10:30', exit: '18:00', gift: 'NO', food: 'NO' },
-//     { name: 'Guest', entry: '09:00', exit: '18:00', gift: 'YES', food: 'YES' },
-//     { name: 'Guest', entry: '09:00', exit: '18:00', gift: 'YES', food: 'YES' },
-//     { name: 'Guest', entry: '09:00', exit: '18:00', gift: 'YES', food: 'YES' }
-// ];
+  Box,
+  Typography,
+  TextField,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  Select,
+  MenuItem,
+  Button,
+} from '@mui/material'
+import { useNavigate } from 'react-router-dom'
+import { API_ROUTE } from '../../../lib/config'
+import { useGlobalInfo } from '../../../contexts/globalContext'
 
 export default function Participants() {
-    const context = useGlobalInfo();
+  const { event: eventId } = useGlobalInfo()
+  const navigate = useNavigate()
 
-    const [filter, setFilter] = useState('All');
-    const [page, setPage] = useState(1);
-    const [rowsPerPage, setRowsPerPage] = useState(10);
-    const [participantData, setParticipantData] = useState([]);
+  const [schema, setSchema] = useState(null)
+  const [rows, setRows] = useState([])
+  const [page, setPage] = useState(1)
+  const [rowsPerPage, setRowsPerPage] = useState(10)
+  const [totalPages, setTotalPages] = useState(1)
+  const [searchText, setSearchText] = useState('')
 
-    const getBoxStyle = (value) => {
-        if (value === 'YES') return { backgroundColor: '#e0f0ff', color: 'green' };
-        if (value === 'NO') return { backgroundColor: '#ffecec', color: 'red' };
-        return { backgroundColor: '#fff5cc', color: 'orange' };
-    };
+  // 1) load schema once
+  useEffect(() => {
+    if (!eventId) return
 
-    const isPresent = (entry, exit) => {
-        return entry !== '00:00' && exit !== '00:00';
-    };
+    fetch(`${API_ROUTE}/api/v1/event/registration-form/eventId/${eventId}`)
+      .then((r) => r.json())
+      .then((forms) => {
+        if (forms.length) setSchema(forms[0])
+      })
+      .catch(console.error)
+  }, [eventId])
 
-    const filteredData = participantData.filter((row) => {
-        if (filter === 'All') return true;
-        if (filter === 'Present') return isPresent(row.entry, row.exit);
-        if (filter === 'Not Present') return !isPresent(row.entry, row.exit);
-        return true;
-    });
+  // 2) load page of submissions whenever page, rowsPerPage, searchText, or schema changes
+  useEffect(() => {
+    if (!eventId) return
 
-    const totalPages = Math.ceil(filteredData.length / rowsPerPage);
-    const paginatedData = filteredData.slice(
-        (page - 1) * rowsPerPage,
-        page * rowsPerPage
-    );
+    const params = new URLSearchParams({
+      eventId,
+      page: page.toString(),
+      limit: rowsPerPage.toString(),
+    })
+    if (searchText.trim()) params.set('q', searchText.trim())
 
-    const handleRowsPerPageChange = (event) => {
-        setRowsPerPage(parseInt(event.target.value, 10));
-        setPage(1);
-    };
+        console.log(
+  `${API_ROUTE}/api/v1/event/participantSearch?` +
+    new URLSearchParams({ eventId, page, limit: rowsPerPage.toString(), q: searchText })
+);
 
-    const handlePrevPage = () => setPage((prev) => Math.max(prev - 1, 1));
-    const handleNextPage = () => setPage((prev) => Math.min(prev + 1, totalPages));
+    fetch(`${API_ROUTE}/api/v1/event/participantSearch?${params.toString()}`)
+      .then((r) => r.json())
+      .then((data) => {
+        setRows(data.results)
+        setTotalPages(data.totalPages)
+      })
+      .catch(console.error)
+  }, [eventId, page, rowsPerPage, searchText])
 
-    useEffect(() => {
-        console.log("context.eventId")
-        if (context.eventId) return;
+  // helper to render a cell
+  function renderValue(row, field) {
+    const resp = row.responses.find((r) => r.fieldId === field.id)
+    if (!resp) return '' // no answer
+    const val = resp.value
+    if (typeof val === 'boolean') return val ? 'YES' : 'NO'
+    return val ?? ''
+  }
 
-        const fetchContent = async () => {
-            console.log("partcipants list")
-            try {
-                const response = await fetch(`${API_ROUTE}/api/v1/event/form-submission`)
-                const result = await response.json();
-                console.log(result)
-                const filteredData = result.filter((item) => item?.eventId === "6647159f56a4bfcf3a4f21d3")
-                console.log(filteredData, "This is filter data");
-
-                setParticipantData(filteredData);
-            } catch (error) {
-                console.error("Failed to fetch the data ", error);
-            }
-        };
-
-        fetchContent();
-
-    }, [context?.eventId]);
-
+  if (!eventId) {
     return (
-        <Box p={3}>
-            <Typography variant="body2" sx={{ color: 'gray', mb: 1 }}>
-                Event Participant live data
-            </Typography>
+      <Typography variant="body1" color="error">
+        No event selected.
+      </Typography>
+    )
+  }
 
-            <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 1 }}>
-                Participant Overview
-            </Typography>
+  if (!schema) {
+    return <Typography>Loading form schema…</Typography>
+  }
 
-            <ToggleButtonGroup
-                value={filter}
-                exclusive
-                onChange={(e, val) => val && setFilter(val)}
-                sx={{ mb: 2 }}
-            >
-                <ToggleButton value="All">All</ToggleButton>
-                <ToggleButton value="Present">Present</ToggleButton>
-                <ToggleButton value="Not Present">not present</ToggleButton>
-            </ToggleButtonGroup>
+  return (
+    <Box p={3}>
+      <Typography variant="h6" gutterBottom>
+        Participant Overview
+      </Typography>
 
-            <TableContainer component={Paper}>
-                <Table>
-                    <TableHead>
-                        <TableRow>
-                            <TableCell sx={{ fontWeight: 'bold' }}>Name</TableCell>
-                            <TableCell sx={{ fontWeight: 'bold' }}>Entry Time</TableCell>
-                            <TableCell sx={{ fontWeight: 'bold' }}>Exit Time</TableCell>
-                            <TableCell sx={{ fontWeight: 'bold' }}>Gift</TableCell>
-                            <TableCell sx={{ fontWeight: 'bold' }}>Food</TableCell>
-                        </TableRow>
-                    </TableHead>
-                    <TableBody>
-                        {paginatedData.map((row, idx) => (
-                            <TableRow key={idx}>
-                                <TableCell>{row.responses[0]?.value}</TableCell>
-                                <TableCell>{row.entryTime || "Not Entered"}</TableCell>
-                                <TableCell>{row.exitTime || "Not Leaved"}</TableCell>
-                                <TableCell>
-                                    <Box
-                                        sx={{
-                                            ...getBoxStyle(row.gift),
-                                            px: 2,
-                                            py: 0.5,
-                                            borderRadius: 1,
-                                            textAlign: 'center',
-                                            width: 'fit-content',
-                                        }}
-                                    >
-                                        {row.gift || "NO"}
-                                    </Box>
-                                </TableCell>
-                                <TableCell>
-                                    <Box
-                                        sx={{
-                                            ...getBoxStyle(row.food),
-                                            px: 2,
-                                            py: 0.5,
-                                            borderRadius: 1,
-                                            textAlign: 'center',
-                                            width: 'fit-content',
-                                        }}
-                                    >
-                                        {row.food || "NO"}
-                                    </Box>
-                                </TableCell>
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
-            </TableContainer>
+      {/* Search bar */}
+      <Box mb={2} display="flex" gap={2} alignItems="center">
+        <TextField
+          size="small"
+          label="Search"
+          value={searchText}
+          onChange={(e) => setSearchText(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') setPage(1)
+          }}
+        />
+        <Button
+          variant="contained"
+          onClick={() => {
+            setPage(1)
+          }}
+        >
+          Go
+        </Button>
+      </Box>
 
-            {/* Pagination Controls */}
-            <Box display="flex" alignItems="center" justifyContent="space-between" mt={2}>
-                <Box display="flex" alignItems="center">
-                    <Select size="small" value={rowsPerPage} onChange={handleRowsPerPageChange}>
-                        <MenuItem value={10}>10</MenuItem>
-                        <MenuItem value={25}>25</MenuItem>
-                        <MenuItem value={50}>50</MenuItem>
-                    </Select>
-                    <Typography variant="body2" sx={{ ml: 1 }}>per page</Typography>
-                </Box>
-                <Box display="flex" alignItems="center" gap={1}>
-                    <Select size="small" value={page} onChange={(e) => setPage(e.target.value)}>
-                        {Array.from({ length: totalPages }, (_, i) => (
-                            <MenuItem key={i + 1} value={i + 1}>{i + 1}</MenuItem>
-                        ))}
-                    </Select>
-                    <Typography variant="body2">of {totalPages} pages</Typography>
-                    <Button size="small" onClick={handlePrevPage}>{'<'}</Button>
-                    <Button size="small" onClick={handleNextPage}>{'>'}</Button>
-                </Box>
-            </Box>
+      <TableContainer component={Paper}>
+        <Table size="small">
+          <TableHead>
+            <TableRow>
+              {/* Dynamic headers */}
+              {schema.fields.map((f) => (
+                <TableCell key={f.id} sx={{ fontWeight: 'bold' }}>
+                  {f.label}
+                </TableCell>
+              ))}
+              <TableCell sx={{ fontWeight: 'bold' }}>Visitors</TableCell>
+              <TableCell sx={{ fontWeight: 'bold' }}>Entry Time</TableCell>
+              <TableCell sx={{ fontWeight: 'bold' }}>Exit Time</TableCell>
+              <TableCell sx={{ fontWeight: 'bold' }}>Gift</TableCell>
+              <TableCell sx={{ fontWeight: 'bold' }}>Food</TableCell>
+              <TableCell sx={{ fontWeight: 'bold' }}>QR Code</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {rows.map((row) => (
+              <TableRow key={row._id}>
+                {schema.fields.map((f) => (
+                  <TableCell key={f.id}>{renderValue(row, f)}</TableCell>
+                ))}
+
+                <TableCell>{row.visitorCount ?? 0}</TableCell>
+
+                <TableCell>
+                  {row.entryTime?.length
+                    ? new Date(row.entryTime[0]).toLocaleTimeString()
+                    : '—'}
+                </TableCell>
+                <TableCell>
+                  {row.exitTime?.length
+                    ? new Date(row.exitTime[0]).toLocaleTimeString()
+                    : '—'}
+                </TableCell>
+                <TableCell>
+                  {row.gift == null ? '—' : row.gift ? 'YES' : 'NO'}
+                </TableCell>
+                <TableCell>
+                  {row.food == null ? '—' : row.food ? 'YES' : 'NO'}
+                </TableCell>
+                <TableCell>
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    onClick={() => navigate(`/qr/${row._id}`)}
+                    disabled={!row.qrcodeUrl}
+                  >
+                    View QR
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
+
+      {/* Pagination Controls */}
+      <Box
+        mt={2}
+        display="flex"
+        justifyContent="space-between"
+        alignItems="center"
+      >
+        <Box display="flex" alignItems="center" gap={1}>
+          <Typography>Page:</Typography>
+          <Select
+            size="small"
+            value={page}
+            onChange={(e) => setPage(Number(e.target.value))}
+          >
+            {Array.from({ length: totalPages }, (_, i) => (
+              <MenuItem key={i + 1} value={i + 1}>
+                {i + 1}
+              </MenuItem>
+            ))}
+          </Select>
+          <Typography>of {totalPages}</Typography>
         </Box>
-    );
+
+        <Box display="flex" alignItems="center" gap={1}>
+          <Typography>Rows per page:</Typography>
+          <Select
+            size="small"
+            value={rowsPerPage}
+            onChange={(e) => {
+              setRowsPerPage(Number(e.target.value))
+              setPage(1)
+            }}
+          >
+            {[10, 25, 50].map((n) => (
+              <MenuItem key={n} value={n}>
+                {n}
+              </MenuItem>
+            ))}
+          </Select>
+        </Box>
+      </Box>
+    </Box>
+  )
 }
