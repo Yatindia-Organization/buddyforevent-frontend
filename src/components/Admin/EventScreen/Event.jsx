@@ -210,7 +210,7 @@ export default function Event() {
           </div>
 
           {/* Sales overview—replace these numbers with real data when available */}
-          <div>
+          {/* <div>
             <p className="font-medium text-indigo-900">SALES OVERVIEW</p>
             <div className="flex justify-around mt-2">
               {[
@@ -224,11 +224,11 @@ export default function Event() {
                 </div>
               ))}
             </div>
-          </div>
+          </div> */}
         </div>
 
         {/* Stats chart */}
-        <EventStatsChart />
+        {/* <EventStatsChart /> */}
 
         {/* Poll modal & snackbar unchanged */}
         {modalOpen && (

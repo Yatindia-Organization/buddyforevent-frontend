@@ -27,6 +27,7 @@ import Participants from "./components/Admin/Participants/Participants.jsx";
 import Settings from "./components/Admin/Settings/Settings.jsx";
 import CreatePoll from "./components/Admin/Poll/CreatePoll.jsx";
 import QRViewer from "./components/QrcodeViewer/qrcodeviewer.jsx";
+import EventLiveCount from "./components/Admin/LiveCount/LiveCount.jsx";
 
 function App() {
   const context = useGlobalInfo();
@@ -40,6 +41,7 @@ function App() {
           path="/qr/:submissionId"
           element={<QRViewer />}  
         />
+         <Route path="/live-count/:id" element={<EventLiveCount />} />
         {isLoggedIn ? (
           // Protected Routes (after login)
           <Route path="/" element={<Main />}>
