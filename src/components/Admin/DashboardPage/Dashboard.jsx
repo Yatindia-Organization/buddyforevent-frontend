@@ -192,7 +192,7 @@ const Dashboard = () => {
 
       {/* Chart */}
       <div className="p-4 bg-bg">
-        <EventStatsChart />
+        {/* <EventStatsChart /> */}
       </div>
     </div>
   );

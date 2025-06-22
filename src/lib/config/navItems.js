@@ -28,21 +28,10 @@ const navConfig = {
             icon: '/svg/create-event.svg'
         },
         {
-            label: 'Bulk Participants',
-            path: '/add-participants',
-            icon: '/svg/bulk-add.svg'
-        },
-        {
             label: 'Report Page',
             path: '/reports',
             icon: '/svg/report.svg'
-        },
-        {
-            label: 'Settings',
-            path: '/settings',
-            icon: '/svg/setting.svg'
         }
-
     ],
     user: [
         {

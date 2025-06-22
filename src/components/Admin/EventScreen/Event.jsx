@@ -158,14 +158,14 @@ export default function Event() {
                 >
                   {`${API_FRONTEND}/${path}`}
                 </a>
-                <div className="flex items-center space-x-1">
+                {/* <div className="flex items-center space-x-1">
                   <img src="/svg/copy.svg" alt="Copy" />
                   <span className="font-medium">COPY</span>
                 </div>
                 <div className="flex items-center space-x-1">
                   <img src="/svg/logo-whatsapp.svg" alt="Share" />
                   <span className="font-medium">SHARE</span>
-                </div>
+                </div> */}
               </div>
             ))}
           </div>
