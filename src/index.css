@@ -2,14 +2,29 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer utilities {
-
-  .bg-navbar {
-    background-color: #000000C9
+@layer base {
+  
+  th, td, .MuiTableCell-root {
+    @apply text-text;
   }
 
+   .MuiToggleButton-root {
+    color: var(--color-text) !important;
+  }
+  .MuiToggleButton-root.Mui-selected {
+    color: var(--color-text) !important;
+  }
+
+    .MuiTypography-root {
+    @apply text-text !important;           
+  }
+}
+
+@layer utilities {
+  .bg-navbar {
+    background-color: #000000C9;
+  }
   .bg-color {
     background-color: #F2F3F4;
   }
-
 }

@@ -1,18 +1,24 @@
+// src/components/forms/CreateAccountForm.jsx
 import React, { useState } from "react";
 import { API_ROUTE } from "../../lib/config";
-import Snackbar from "@mui/material/Snackbar";
-import Alert from "@mui/material/Alert";
-import IconButton from "@mui/material/IconButton";
-import InputAdornment from "@mui/material/InputAdornment";
-import TextField from "@mui/material/TextField";
+import { useGlobalInfo } from "../../contexts/globalContext";
+import {
+  Paper,
+  Stack,
+  TextField,
+  IconButton,
+  InputAdornment,
+  Button,
+  Typography,
+  Snackbar,
+  Alert,
+  Link as MuiLink,
+} from "@mui/material";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import { Turnstile } from "@marsidev/react-turnstile";
-import { redirect } from "react-router-dom";
-import { useGlobalInfo } from "../../contexts/globalContext";
 
-const CreateAccountForm = () => {
+export default function CreateAccountForm() {
   const context = useGlobalInfo();
-
   const [form, setForm] = useState({
     name: "",
     phone_number: "",
@@ -22,114 +28,79 @@ const CreateAccountForm = () => {
     email: "",
     password: "",
     confirmPassword: "",
-    user_type: "admin"
+    user_type: "admin",
   });
-
   const [errors, setErrors] = useState({});
   const [captchaToken, setCaptchaToken] = useState(null);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const SITE_KEY = import.meta.env.VITE_CLOUDFLARE_SITE_KEY;
-
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: "",
-    severity: "success"
+    severity: "success",
   });
 
-  const handleSnackbarClose = () => {
-    setSnackbar((prev) => ({ ...prev, open: false }));
+  const handleSnackbarClose = () => setSnackbar(s => ({ ...s, open: false }));
+
+  const handleChange = e => {
+    const { name, value } = e.target;
+    setForm(f => ({ ...f, [name]: name === "phone_number" ? value.replace(/\D/g, "") : value }));
   };
 
   const validate = () => {
-    const newErrors = {};
-    if (!form.name) newErrors.name = "Name is required";
-    if (!/^\d{10}$/.test(form.phone_number)) newErrors.phone_number = "Valid 10-digit number required";
-    if (!form.company_name) newErrors.company_name = "Company name is required";
-    if (!form.company_gst_number) newErrors.company_gst_number = "Company GST number is required";
-    if (!form.location) newErrors.location = "Location is required";
-    if (!/\S+@\S+\.\S+/.test(form.email)) newErrors.email = "Invalid email";
-    if (!form.password.match(/^(?=.*[A-Z])(?=.*\d).{8,}$/)) newErrors.password = "Min 8 chars, 1 uppercase, 1 number";
-    if (form.password !== form.confirmPassword) newErrors.confirmPassword = "Passwords must match";
-    // if (!captchaToken) newErrors.captcha = "Please complete the CAPTCHA";  //disabling captcha for the case of localhost 
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    const errs = {};
+    if (!form.name) errs.name = "Name is required";
+    if (!/^\d{10}$/.test(form.phone_number)) errs.phone_number = "Enter a 10-digit phone";
+    if (!form.company_name) errs.company_name = "Required";
+    if (!form.company_gst_number) errs.company_gst_number = "Required";
+    if (!form.location) errs.location = "Required";
+    if (!/\S+@\S+\.\S+/.test(form.email)) errs.email = "Invalid email";
+    if (!form.password.match(/^(?=.*[A-Z])(?=.*\d).{8,}$/))
+      errs.password = "Min 8 chars, 1 uppercase, 1 number";
+    if (form.password !== form.confirmPassword)
+      errs.confirmPassword = "Passwords must match";
+    // if (!captchaToken) errs.captcha = "Complete the CAPTCHA";
+    setErrors(errs);
+    return Object.keys(errs).length === 0;
   };
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    const cleaned = name === "phone_number" ? value.replace(/[^0-9]/g, "") : value;
-    setForm({ ...form, [name]: cleaned });
-  };
+  const isFormValid = () =>
+    Object.keys(form).every(k =>
+      k === "captchaToken" ? true : Boolean(form[k])
+    ) && form.password === form.confirmPassword && !loading;
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async e => {
     e.preventDefault();
-    if (validate()) {
-      setLoading(true);
-      try {
-        const response = await fetch(`${API_ROUTE}/api/v1/auth/sign-up`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            name: form.name,
-            email: form.email,
-            password: form.password,
-            phone_number: form.phone_number,
-            company_name: form.company_name,
-            company_gst_number: form.company_gst_number,
-            user_type: form.user_type
-          })
-        });
-
-        const data = await response.json();
-
-        if (response.ok) {
-          const user = data.data?.newUsers?.[0];
-          const token = data.data?.token;
-          context.changeLoginFlow(true);
-          context.changeUserType(user.user_type);
-          context.changeUserId(user._id);
-
-          localStorage.setItem("isLoggedIn", "true");
-          localStorage.setItem("userType", user.user_type);
-          localStorage.setItem("userId", user._id);
-
-          setSnackbar({ open: true, message: "Account created successfully!", severity: "success" });
-          setTimeout(() => {
-            redirect("/");
-          }, 1000);
-        } else {
-          setSnackbar({ open: true, message: data.message || "Failed to create account", severity: "error" });
-        }
-      } catch (err) {
-        setSnackbar({ open: true, message: "Server error. Try again later.", severity: "error" });
-      } finally {
-        setLoading(false);
-      }
+    if (!validate()) return;
+    setLoading(true);
+    try {
+      const res = await fetch(`${API_ROUTE}/api/v1/auth/sign-up`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Failed to create account");
+      const user = data.data.newUsers[0];
+      context.changeLoginFlow(true);
+      context.changeUserType(user.user_type);
+      context.changeUserId(user._id);
+      localStorage.setItem("isLoggedIn", "true");
+      localStorage.setItem("userType", user.user_type);
+      localStorage.setItem("userId", user._id);
+      setSnackbar({ open: true, message: "Account created!", severity: "success" });
+      setTimeout(() => window.location.href = "/", 1000);
+    } catch (err) {
+      setSnackbar({ open: true, message: err.message, severity: "error" });
+    } finally {
+      setLoading(false);
     }
   };
 
-  const isFormValid = () => {
-    const conditions = {
-      name: form.name.trim().length > 0,
-      phone: /^\d{10}$/.test(form.phone_number),
-      company: form.company_name.trim().length > 0,
-      gst: form.company_gst_number.trim().length > 0,
-      location: form.location.trim().length > 0,
-      email: /\S+@\S+\.\S+/.test(form.email),
-      password: form.password.length > 0,
-      confirmMatch: form.password === form.confirmPassword,
-      // captcha: !!captchaToken,   // disabled the captcha to work in localhost 
-      captcha: true,
-      loading: !loading
-    };
-    console.log("Validation Status:", conditions);
-    return Object.values(conditions).every(Boolean);
-  };
-
   return (
-    <div className="h-[90vh] overflow-y-auto flex items-center justify-center p-4">
+    <>
       <Snackbar
         open={snackbar.open}
         autoHideDuration={4000}
@@ -141,103 +112,125 @@ const CreateAccountForm = () => {
         </Alert>
       </Snackbar>
 
-      <form onSubmit={handleSubmit} className="w-full max-w-md p-[2vw] rounded">
-        <h2 className="text-2xl font-bold mb-2">Create Account</h2>
-        <p className="mb-6 text-sm">Please fill in your details to get started.</p>
+      <Paper
+        elevation={3}
+        sx={{
+          p: 4,
+          width: "100%",
+          bgcolor: "var(--color-card-bg)",
+          color: "var(--color-text)",
+          maxHeight: "80vh",
+          overflowY: "auto"
+        }}
+      >
+        <Typography variant="h5" fontWeight="bold" mb={1}>
+          Create Account
+        </Typography>
+        <Typography variant="body2" mb={3} color="var(--color-text-secondary)">
+          Fill in your details to register.
+        </Typography>
 
-        {["name", "phone_number", "company_name", "company_gst_number", "location", "email"].map((field) => (
-          <div className="mb-[2vw]" key={field}>
+        <form onSubmit={handleSubmit}>
+          <Stack spacing={2.5}>
+            {[
+              { name: "name", label: "Name" },
+              { name: "phone_number", label: "Phone Number" },
+              { name: "company_name", label: "Company Name" },
+              { name: "company_gst_number", label: "Company GST Number" },
+              { name: "location", label: "Location" },
+              { name: "email", label: "Email", type: "email" },
+            ].map(field => (
+              <TextField
+                key={field.name}
+                fullWidth
+                label={field.label}
+                name={field.name}
+                type={field.type || "text"}
+                value={form[field.name]}
+                onChange={handleChange}
+                variant="standard"
+                error={Boolean(errors[field.name])}
+                helperText={errors[field.name]}
+                size="small"
+              />
+            ))}
+
             <TextField
               fullWidth
-              label={field.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())}
-              name={field}
-              type={field === "phone_number" ? "text" : "text"}
-              inputMode={field === "phone_number" ? "numeric" : undefined}
-              value={form[field]}
+              label="Password"
+              name="password"
+              type={showPassword ? "text" : "password"}
+              value={form.password}
               onChange={handleChange}
               variant="standard"
-              error={Boolean(errors[field])}
-              helperText={errors[field]}
+              error={Boolean(errors.password)}
+              helperText={errors.password}
+              size="small"
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton onClick={() => setShowPassword(v => !v)} edge="end" size="small">
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
             />
-          </div>
-        ))}
 
-        <div className="mb-[2vw]">
-          <TextField
-            fullWidth
-            label="Password"
-            name="password"
-            type={showPassword ? "text" : "password"}
-            value={form.password}
-            onChange={handleChange}
-            variant="standard"
-            error={Boolean(errors.password)}
-            helperText={errors.password}
-            InputProps={{
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton onClick={() => setShowPassword((prev) => !prev)} edge="end">
-                    {showPassword ? <VisibilityOff /> : <Visibility />}
-                  </IconButton>
-                </InputAdornment>
-              )
-            }}
-          />
-        </div>
+            <TextField
+              fullWidth
+              label="Confirm Password"
+              name="confirmPassword"
+              type={showConfirm ? "text" : "password"}
+              value={form.confirmPassword}
+              onChange={handleChange}
+              variant="standard"
+              error={Boolean(errors.confirmPassword)}
+              helperText={errors.confirmPassword}
+              size="small"
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton onClick={() => setShowConfirm(v => !v)} edge="end" size="small">
+                      {showConfirm ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+            />
 
-        <div className="mb-[2vw]">
-          <TextField
-            fullWidth
-            label="Confirm Password"
-            name="confirmPassword"
-            type={showConfirm ? "text" : "password"}
-            value={form.confirmPassword}
-            onChange={handleChange}
-            variant="standard"
-            error={Boolean(errors.confirmPassword)}
-            helperText={errors.confirmPassword}
-            InputProps={{
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton onClick={() => setShowConfirm((prev) => !prev)} edge="end">
-                    {showConfirm ? <VisibilityOff /> : <Visibility />}
-                  </IconButton>
-                </InputAdornment>
-              )
-            }}
-          />
-        </div>
+            <div>
+              <Turnstile
+                siteKey={SITE_KEY}
+                onSuccess={token => { setCaptchaToken(token); setErrors(e => ({ ...e, captcha: undefined })); }}
+                onError={() => setCaptchaToken(null)}
+              />
+              {errors.captcha && (
+                <Typography color="error" variant="caption">
+                  {errors.captcha}
+                </Typography>
+              )}
+            </div>
 
-        <div className="mb-[2vw]">
-          <Turnstile
-            siteKey={SITE_KEY}
-            onSuccess={(token) => {
-              setCaptchaToken(token);
-              setErrors((prev) => ({ ...prev, captcha: undefined }));
-            }}
-            onError={() => setCaptchaToken(null)}
-          />
-          {errors.captcha && <p className="text-red-500 text-sm mt-1">{errors.captcha}</p>}
-        </div>
+            <Button
+              type="submit"
+              variant="contained"
+              color="primary"
+              disabled={!isFormValid()}
+              fullWidth
+            >
+              {loading ? "Submitting..." : "Sign Up"}
+            </Button>
 
-        <button
-          type="submit"
-          disabled={!isFormValid()}
-          className={`w-full bg-black text-white p-2 rounded mt-[1vw] ${
-            !isFormValid() ? "opacity-50 cursor-not-allowed" : ""
-          }`}
-        >
-          {loading ? "Submitting..." : "Sign Up"}
-        </button>
-
-        <div className="w-full flex justify-between items-center text-sm mt-4">
-          <span>
-            Already have an account? <a href="/login" className="underline font-medium">Login</a>
-          </span>
-        </div>
-      </form>
-    </div>
+            <Typography variant="body2" textAlign="center">
+              Already have an account?{" "}
+              <MuiLink href="/login" underline="hover" color="primary">
+                Login
+              </MuiLink>
+            </Typography>
+          </Stack>
+        </form>
+      </Paper>
+    </>
   );
-};
-
-export default CreateAccountForm;
+}

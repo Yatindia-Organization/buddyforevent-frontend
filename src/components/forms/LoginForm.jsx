@@ -1,15 +1,23 @@
+// src/components/forms/LoginForm.jsx
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useGlobalInfo } from "../../contexts/globalContext";
 import { API_ROUTE } from "../../lib/config";
-import Snackbar from "@mui/material/Snackbar";
-import Alert from "@mui/material/Alert";
-import IconButton from "@mui/material/IconButton";
-import InputAdornment from "@mui/material/InputAdornment";
-import TextField from "@mui/material/TextField";
+import {
+  Snackbar,
+  Alert,
+  IconButton,
+  InputAdornment,
+  TextField,
+  Typography,
+  Paper,
+  Stack,
+  Button,
+  Link as MuiLink,
+} from "@mui/material";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 
-const LoginForm = () => {
+export default function LoginForm() {
   const context = useGlobalInfo();
   const navigate = useNavigate();
 
@@ -24,9 +32,8 @@ const LoginForm = () => {
     severity: "success",
   });
 
-  const handleSnackbarClose = () => {
+  const handleSnackbarClose = () =>
     setSnackbar((prev) => ({ ...prev, open: false }));
-  };
 
   const validate = () => {
     const newErrors = {};
@@ -42,125 +49,152 @@ const LoginForm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (validate()) {
-      setLoading(true);
-      try {
-        const response = await fetch(`${API_ROUTE}/api/v1/auth/sign-in`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(form),
+    if (!validate()) return;
+    setLoading(true);
+    try {
+      const res = await fetch(`${API_ROUTE}/api/v1/auth/sign-in`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        const user = data.data.existingUser;
+        const token = data.data.token;
+        context.changeLoginFlow(true);
+        context.changeUserType(user.user_type);
+        context.changeUserId(user._id);
+        localStorage.setItem("isLoggedIn", "true");
+        localStorage.setItem("userType", user.user_type);
+        localStorage.setItem("userId", user._id);
+        localStorage.setItem("token", token);
+        localStorage.setItem("user", JSON.stringify(user));
+        setSnackbar({
+          open: true,
+          message: "Login successful!",
+          severity: "success",
         });
-
-        const data = await response.json();
-
-        if (response.ok) {
-          const user = data.data?.existingUser;
-          const token = data.data?.token;
-
-          context.changeLoginFlow(true);
-          context.changeUserType(user.user_type);
-          context.changeUserId(user._id);
-
-          localStorage.setItem("isLoggedIn", "true");
-          localStorage.setItem("userType", user.user_type);
-          localStorage.setItem("userId", user._id);
-          localStorage.setItem("token", token);
-          localStorage.setItem("user", JSON.stringify(user));
-
-          setSnackbar({ open: true, message: "Login successful!", severity: "success" });
-          setTimeout(() => navigate("/"), 1000);
-        } else {
-          setSnackbar({ open: true, message: data.message || "Invalid login credentials", severity: "error" });
-        }
-      } catch (err) {
-        setSnackbar({ open: true, message: "Server error. Please try again later.", severity: "error" });
-      } finally {
-        setLoading(false);
+        setTimeout(() => navigate("/"), 1000);
+      } else {
+        setSnackbar({
+          open: true,
+          message: data.message || "Invalid credentials",
+          severity: "error",
+        });
       }
+    } catch {
+      setSnackbar({
+        open: true,
+        message: "Server error. Try again later.",
+        severity: "error",
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
-  const isFormValid = () => {
-    return (
-      /\S+@\S+\.\S+/.test(form.email) &&
-      form.password.length > 0 &&
-      !loading
-    );
-  };
+  const isFormValid = () =>
+    /\S+@\S+\.\S+/.test(form.email) && form.password && !loading;
 
   return (
-    <div className="h-[80vh] flex items-center justify-center">
+    <>
       <Snackbar
         open={snackbar.open}
         autoHideDuration={4000}
         onClose={handleSnackbarClose}
         anchorOrigin={{ vertical: "top", horizontal: "center" }}
       >
-        <Alert onClose={handleSnackbarClose} severity={snackbar.severity} sx={{ width: "100%" }}>
+        <Alert
+          onClose={handleSnackbarClose}
+          severity={snackbar.severity}
+          sx={{ width: "100%" }}
+        >
           {snackbar.message}
         </Alert>
       </Snackbar>
 
-      <form onSubmit={handleSubmit} className="w-full max-w-md p-[2vw] rounded ">
-        <h2 className="text-2xl font-bold mb-2">Welcome back,</h2>
-        <p className="mb-6 text-sm">Welcome back! Please enter your details.</p>
+      <Paper
+        elevation={3}
+        sx={{
+          p: 4,
+          width: "100%",
+          bgcolor: "var(--color-card-bg)",
+        }}
+      >
+        <Typography variant="h5" fontWeight="bold" mb={1}>
+          Welcome back,
+        </Typography>
+        <Typography variant="body2" mb={3} color="var(--color-text-secondary)">
+          Please enter your details to log in.
+        </Typography>
 
-        <div className="mb-[2vw]">
-          <TextField
-            fullWidth
-            label="Email"
-            name="email"
-            value={form.email}
-            onChange={handleChange}
-            variant="standard"
-            error={Boolean(errors.email)}
-            helperText={errors.email}
-          />
-        </div>
+        <form onSubmit={handleSubmit}>
+          <Stack spacing={3}>
+            <TextField
+              fullWidth
+              label="Email"
+              name="email"
+              value={form.email}
+              onChange={handleChange}
+              variant="standard"
+              error={Boolean(errors.email)}
+              helperText={errors.email}
+            />
 
-        <div className="mb-[2vw]">
-          <TextField
-            fullWidth
-            label="Password"
-            name="password"
-            type={showPassword ? "text" : "password"}
-            value={form.password}
-            onChange={handleChange}
-            variant="standard"
-            error={Boolean(errors.password)}
-            helperText={errors.password}
-            InputProps={{
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton onClick={() => setShowPassword((prev) => !prev)} edge="end">
-                    {showPassword ? <VisibilityOff /> : <Visibility />}
-                  </IconButton>
-                </InputAdornment>
-              )
-            }}
-          />
-        </div>
+            <TextField
+              fullWidth
+              label="Password"
+              name="password"
+              type={showPassword ? "text" : "password"}
+              value={form.password}
+              onChange={handleChange}
+              variant="standard"
+              error={Boolean(errors.password)}
+              helperText={errors.password}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      onClick={() => setShowPassword((v) => !v)}
+                      edge="end"
+                    >
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+            />
 
-        <div className="my-[2vw] flex justify-end">
-          <a href="/forgot-password" className="underline font-medium">Forgot Password</a>
-        </div>
+            <div className="flex justify-end">
+              <MuiLink
+                component="a"
+                href="/forgot-password"
+                underline="hover"
+                color="primary"
+              >
+                Forgot Password?
+              </MuiLink>
+            </div>
 
-        <button
-          type="submit"
-          disabled={!isFormValid()}
-          className={`w-full bg-black text-white p-2 rounded mt-[1vw] ${!isFormValid() ? "opacity-50 cursor-not-allowed" : ""}`}
-        >
-          {loading ? "Logging in..." : "Log in"}
-        </button>
+            <Button
+              type="submit"
+              variant="contained"
+              color="primary"
+              fullWidth
+              disabled={!isFormValid()}
+            >
+              {loading ? "Logging in..." : "Log in"}
+            </Button>
 
-        <div className="w-full flex justify-between items-center text-sm mt-4">
-          <span>
-            Don’t have an account? <a href="/create-account" className="underline font-medium">Sign up for free</a>
-          </span>
-        </div>
-      </form>
-    </div>
+            <Typography variant="body2" textAlign="center">
+              Don't have an account?{" "}
+              <MuiLink component="a" href="/create-account" underline="hover">
+                Sign up for free
+              </MuiLink>
+            </Typography>
+          </Stack>
+        </form>
+      </Paper>
+    </>
   );
-};
-
-export default LoginForm;
+}

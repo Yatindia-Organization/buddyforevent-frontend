@@ -1,14 +1,17 @@
+// src/components/Admin/EventScreen/Event.jsx
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Alert, Snackbar } from '@mui/material';
-import { format } from 'date-fns';         // for date formatting
+import { format } from 'date-fns';
 import EventStatsChart from '../../echarts/EventStatsChart';
-import { API_ROUTE } from '../../../lib/config';
+import { API_FRONTEND, API_ROUTE } from '../../../lib/config';
 import { useGlobalInfo } from '../../../contexts/globalContext';
+import { useTheme } from '../../../contexts/ThemeContext';
 
 export default function Event() {
+  const { theme } = useTheme();
   const context = useGlobalInfo();
-  const id  = context.event;
+  const id = context.event;
 
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -28,7 +31,6 @@ export default function Event() {
         if (!res.ok) throw new Error('Event not found');
         const { data } = await res.json();
         setEvent(data);
-
       } catch (err) {
         console.error(err);
         setEvent(null);
@@ -39,13 +41,12 @@ export default function Event() {
     fetchEvent();
   }, [id]);
 
-
   const showSnackbar = (message, severity = 'success') =>
     setSnackbar({ open: true, message, severity });
 
-  // Poll handlers unchanged...
   const handlePollChange = (i, v) => {
-    const opts = [...poll.options]; opts[i] = v;
+    const opts = [...poll.options];
+    opts[i] = v;
     setPoll({ ...poll, options: opts });
   };
   const addPollOption = () =>
@@ -77,22 +78,21 @@ export default function Event() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-gray-900" />
+      <div className="flex items-center justify-center h-screen bg-bg text-text font-sans">
+        <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-text" />
       </div>
     );
   }
 
   if (!event) {
     return (
-      <div className="flex flex-col items-center justify-center h-screen text-center space-y-4">
-        <h1 className="text-2xl font-bold">Event Not Found</h1>
-        <p className="text-gray-500">The event you're looking for doesn't exist or has been removed.</p>
+      <div className="flex flex-col items-center justify-center h-screen bg-bg text-text-secondary font-sans space-y-4">
+        <h1 className="text-2xl font-heading">Event Not Found</h1>
+        <p>The event you’re looking for doesn’t exist or has been removed.</p>
       </div>
     );
   }
 
-  // Destructure exactly the fields your payload provides:
   const {
     name,
     cover_image,
@@ -105,150 +105,131 @@ export default function Event() {
     end_time,
   } = event;
 
-  // Format ISO dates into e.g. "Jun 18, 2025"
   const formattedDate = `${format(new Date(start_date), 'MMM d, yyyy')} – ${format(new Date(end_date), 'MMM d, yyyy')}`;
   const formattedTime = `${start_time} – ${end_time}`;
 
+  // build the new Live Count URL
+  const liveCountPath = `live-count/${id}`;
+  const liveCountUrl = `${API_ROUTE}/${liveCountPath}`;
+
   return (
-    <div className="flex flex-col md:flex-row gap-8">
-      {/* LEFT */}
-      <div className="w-full md:w-1/2 space-y-6">
-        {/* Use cover_image from payload */}
-        <img
-          src={cover_image}
-          alt="Event Cover"
-          className={`object-cover rounded ${getImageHeight()}`}
-        />
+    <div className="min-h-screen p-8 bg-bg text-text font-sans">
+      <div className="flex flex-col md:flex-row gap-8">
+        {/* LEFT COLUMN */}
+        <div className="w-full md:w-1/2 space-y-6">
+          <img
+            src={cover_image}
+            alt="Event Cover"
+            className={`object-cover rounded ${getImageHeight()} bg-card`}
+          />
 
-        <p className="text-center text-sm text-red-600 font-semibold">
-          Please upload a picture of size 1280 × 720 px
-        </p>
+          <p className="text-center text-sm text-text-secondary font-semibold">
+            Please upload a picture of size 1280 × 720 px
+          </p>
 
-        <div className="flex justify-between">
-          <Link to={`/event/${id}/edit`} className="flex items-center gap-2 text-blue-700">
-            <img className="w-6" src="/svg/edit.svg" alt="Edit" />
-            Edit Event
-          </Link>
-          <Link to={`/event/${id}/design`} className="flex items-center gap-2 text-blue-700">
-            <img className="w-6" src="/svg/edit-design.svg" alt="Design" />
-            Edit Design
-          </Link>
-          <Link to={`/event/${id}/preview`} className="flex items-center gap-2 text-blue-700">
-            <img className="w-6" src="/svg/eye.svg" alt="Preview" />
-            Preview
-          </Link>
-        </div>
-
-        {/* Dynamic URLs using the event id */}
-        <div className="space-y-4 p-3 bg-white rounded-lg">
-          {[
-            ['Live Count', `event/${id}/live-count`],
-            ['Event Feedback', `event/${id}/feedback`],
-            ['Live Poll', `event/${id}/polls`],
-          ].map(([label, path]) => (
-            <div key={label} className="flex justify-between items-center">
-              <span className="font-medium">{label} URL</span>
-              <a
-                href={`${API_ROUTE}/${path}`}
-                className="underline text-blue-600 truncate w-40"
-              >
-                {`${API_ROUTE}/${path}`}
-              </a>
-              <div className="flex items-center space-x-1">
-                <img src="/svg/copy.svg" alt="Copy" />
-                <span className="font-medium">COPY</span>
-              </div>
-              <div className="flex items-center space-x-1">
-                <img src="/svg/logo-whatsapp.svg" alt="Share" />
-                <span className="font-medium">SHARE</span>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* RIGHT */}
-      <div className="w-full md:w-1/2 space-y-8">
-        {/* Event name */}
-        <h1 className="text-3xl font-bold text-indigo-900">{name}</h1>
-
-        {/* Status/actions */}
-        <div className="flex gap-2">
-          <span className="px-3 py-1 bg-green-600 text-white rounded">PUBLISHED</span>
-          <button className="px-3 py-1 bg-yellow-500 text-white rounded">PAUSE EVENT</button>
-          <button className="px-3 py-1 bg-red-500 text-white rounded">CANCEL EVENT</button>
-        </div>
-
-        {/* Logo */}
-        <div className="flex items-center justify-between">
-          <span className="text-lg font-medium text-indigo-900">EVENT LOGO</span>
-          <img src={logo_image} alt="Logo" className="w-24" />
-        </div>
-
-        {/* Description & stats */}
-        <div className="p-4 bg-white rounded-lg space-y-4 text-gray-700 text-sm">
-          <div>
-            <p className="font-medium text-indigo-900">EVENT DESCRIPTION</p>
-            <p>{description}</p>
-          </div>
-          <div>
-            <p className="font-medium text-indigo-900">EVENT OVERVIEW</p>
-            <div className="mt-2 space-y-2">
-              <div className="flex items-center gap-2">
-                <img className="w-4" src="/svg/location-pin.svg" alt="" />
-                <span>{location}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <img className="w-4" src="/svg/calender.svg" alt="" />
-                <span>{formattedDate}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <img className="w-4" src="/svg/timer.svg" alt="" />
-                <span>{formattedTime}</span>
-              </div>
-            </div>
+          <div className="flex justify-between">
+            <Link to={`/event/${id}/edit`} className="flex items-center gap-2 text-primary">
+              <img className="w-6" src="/svg/edit.svg" alt="Edit" />
+              Edit Event
+            </Link>
+            <Link to={`/event/${id}/design`} className="flex items-center gap-2 text-primary">
+              <img className="w-6" src="/svg/edit-design.svg" alt="Design" />
+              Edit Design
+            </Link>
+            <Link to={`/event/${id}/preview`} className="flex items-center gap-2 text-primary">
+              <img className="w-6" src="/svg/eye.svg" alt="Preview" />
+              Preview
+            </Link>
           </div>
 
-          {/* Sales overview—replace these numbers with real data when available */}
-          {/* <div>
-            <p className="font-medium text-indigo-900">SALES OVERVIEW</p>
-            <div className="flex justify-around mt-2">
-              {[
-                ['REGISTERED', event.registered || 0],
-                ['GUEST REGISTERED', event.guest_registered || 0],
-                ['VIEWS', event.views || 0],
-              ].map(([label, val]) => (
-                <div key={label} className="text-center">
-                  <p className="text-green-600 font-bold">{val}</p>
-                  <p className="text-xs">{label}</p>
+          <div className="space-y-4 p-3 bg-card rounded-lg">
+            {[
+              ['Live Count', liveCountPath],
+              ['Event Feedback', `event/${id}/feedback`],
+              ['Live Poll', `event/${id}/polls`],
+            ].map(([label, path]) => (
+              <div key={label} className="flex justify-between items-center">
+                <span className="font-medium">{label} URL</span>
+                <a
+                  href={`${API_FRONTEND}/${path}`}
+                  className="underline text-primary truncate w-40"
+                  target={label === 'Live Count' ? '' : '_blank'}
+                  rel="noreferrer"
+                >
+                  {`${API_FRONTEND}/${path}`}
+                </a>
+                <div className="flex items-center space-x-1">
+                  <img src="/svg/copy.svg" alt="Copy" />
+                  <span className="font-medium">COPY</span>
                 </div>
-              ))}
-            </div>
-          </div> */}
+                <div className="flex items-center space-x-1">
+                  <img src="/svg/logo-whatsapp.svg" alt="Share" />
+                  <span className="font-medium">SHARE</span>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
 
-        {/* Stats chart */}
-        {/* <EventStatsChart /> */}
+        {/* RIGHT COLUMN */}
+        <div className="w-full md:w-1/2 space-y-8">
+          <h1 className="text-3xl font-heading">{name}</h1>
 
-        {/* Poll modal & snackbar unchanged */}
-        {modalOpen && (
-          /* ...modal code here (unchanged) */
-          <div>…</div>
-        )}
-        <Snackbar
-          open={snackbar.open}
-          autoHideDuration={4000}
-          onClose={() => setSnackbar(o => ({ ...o, open: false }))}
-          anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
-        >
-          <Alert
+          {/* Status / Actions */}
+          <div className="flex gap-2">
+            <span className="px-3 py-1 bg-green-600 text-white rounded">PUBLISHED</span>
+            <button className="px-3 py-1 bg-yellow-500 text-white rounded">PAUSE EVENT</button>
+            <button className="px-3 py-1 bg-red-500 text-white rounded">CANCEL EVENT</button>
+          </div>
+
+          {/* Logo */}
+          <div className="flex items-center justify-between">
+            <span className="text-lg font-medium">{`EVENT LOGO`}</span>
+            <img src={logo_image} alt="Logo" className="w-24 rounded-full shadow" />
+          </div>
+
+          {/* Description & Overview */}
+          <div className="p-4 bg-card rounded-lg space-y-4 text-text text-sm">
+            <div>
+              <p className="font-medium">EVENT DESCRIPTION</p>
+              <p>{description}</p>
+            </div>
+            <div>
+              <p className="font-medium">EVENT OVERVIEW</p>
+              <div className="mt-2 space-y-2 text-text-secondary">
+                <div className="flex items-center gap-2">
+                  <img className="w-4" src="/svg/location-pin.svg" alt="" />
+                  <span>{location}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <img className="w-4" src="/svg/calender.svg" alt="" />
+                  <span>{formattedDate}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <img className="w-4" src="/svg/timer.svg" alt="" />
+                  <span>{formattedTime}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Poll & Snackbar */}
+          {modalOpen && <div>…modal…</div>}
+          <Snackbar
+            open={snackbar.open}
+            autoHideDuration={4000}
             onClose={() => setSnackbar(o => ({ ...o, open: false }))}
-            severity={snackbar.severity}
-            sx={{ width: '100%' }}
+            anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
           >
-            {snackbar.message}
-          </Alert>
-        </Snackbar>
+            <Alert
+              onClose={() => setSnackbar(o => ({ ...o, open: false }))}
+              severity={snackbar.severity}
+              sx={{ width: '100%' }}
+            >
+              {snackbar.message}
+            </Alert>
+          </Snackbar>
+        </div>
       </div>
     </div>
   );

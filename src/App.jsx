@@ -28,6 +28,9 @@ import Settings from "./components/Admin/Settings/Settings.jsx";
 import CreatePoll from "./components/Admin/Poll/CreatePoll.jsx";
 import QRViewer from "./components/QrcodeViewer/qrcodeviewer.jsx";
 import EventLiveCount from "./components/Admin/LiveCount/LiveCount.jsx";
+import FeedbackAdmin from "./components/Admin/Feedback/AdminFeedbackView.jsx";
+import FeedbackForm from "./components/Admin/Feedback/FeedbackForm.jsx";
+
 
 function App() {
   const context = useGlobalInfo();
@@ -42,11 +45,13 @@ function App() {
           element={<QRViewer />}  
         />
          <Route path="/live-count/:id" element={<EventLiveCount />} />
+         <Route path="/feedback-entry/:id" element={<FeedbackForm />} />
         {isLoggedIn ? (
           // Protected Routes (after login)
           <Route path="/" element={<Main />}>
             <Route index element={<Navigate to="dashboard" replace />} />
             <Route path="dashboard" element={<Dashboard />} />
+            <Route path="feedbackView/:eventId" element={<FeedbackAdmin />} />
             <Route path="/event-dashboard" element={<EventDashboard />} >
               <Route index element={<Navigate to="event/:id" replace />} />
               <Route path="event/:id" element={<Event />} />
@@ -57,6 +62,7 @@ function App() {
               <Route path="payment-history" element={<PaymentHistory />} />
               <Route path="email-message" element={<Email />} />
               <Route path="reports" element={<Report />} />
+             
               <Route path="create-poll" element={<CreatePoll />} />
             </Route>
 

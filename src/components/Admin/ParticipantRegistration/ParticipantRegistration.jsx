@@ -2,47 +2,60 @@ import React, { useState } from 'react';
 import FormBuilder from '../DynamicFormBuilder/FormBuilder/FormBuilder';
 import TicketRegistrationForm from '../TicketRegistration/TicketRegistrationForm';
 import { Box, ToggleButton, ToggleButtonGroup } from '@mui/material';
+import { useTheme } from '../../../contexts/ThemeContext';
 
 export default function ParticipantRegistration() {
-    const [formType, setFormType] = useState('ticket'); // 'ticket' or 'user'
+  const { theme } = useTheme();
+  const [formType, setFormType] = useState('ticket'); // 'ticket' or 'user'
 
-    return (
-        <div className='flex flex-col gap-[1vw]'>
-            <div className='flex justify-between'>
-                <div className='w-auto'>
-                    <p className='text-[28px] text-[#9A93B3] font-medium'>Event Registration</p>
-                    <p className='text-[14px] text-[#494949]'>You can create event registrations form and ticket registration count here for your event.</p>
-                </div>
-                {/* Toggle for registration type form */}
-                <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 3 }}>
-                    <ToggleButtonGroup
-                        value={formType}
-                        exclusive
-                        onChange={(e, val) => val && setFormType(val)}
-                        sx={{
-                            backgroundColor: '#f5f5f5',
-                            borderRadius: '8px',
-                            '& .MuiToggleButton-root': {
-                                textTransform: 'none',
-                                fontWeight: 'bold',
-                                border: 'none',
-                                px: 2
-                            },
-                            '& .Mui-selected': {
-                                borderBottom: '3px solid #4CAF50',
-                                backgroundColor: 'transparent'
-                            }
-                        }}
-                    >
-                        <ToggleButton value="ticket">Ticket Registration</ToggleButton>
-                        <ToggleButton value="user">User Registration Form</ToggleButton>
-                    </ToggleButtonGroup>
-                </Box>
-            </div>
-
-            <div className='w-full h-auto bg-white'>
-                {formType === 'ticket' ? <TicketRegistrationForm /> : <FormBuilder />}
-            </div>
+  return (
+    <div className="min-h-screen p-8 bg-bg text-text font-sans flex flex-col gap-8">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div className="space-y-1">
+          <p className="text-2xl font-heading">Event Registration</p>
+          <p className="text-sm text-text-secondary">
+            You can create event registration forms and track ticket counts here.
+          </p>
         </div>
-    );
+
+        {/* Toggle */}
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'flex-end',
+            backgroundColor: 'var(--color-card-bg)',
+            borderRadius: '8px',
+            '& .MuiToggleButton-root': {
+              textTransform: 'none',
+              fontWeight: 'bold',
+              border: 'none',
+              px: 2,
+            },
+            '& .MuiToggleButton-root:hover': {
+              backgroundColor: 'var(--color-bg)',
+            },
+            '& .Mui-selected': {
+              borderBottom: '3px solid var(--color-primary)',
+              backgroundColor: 'transparent',
+            },
+          }}
+        >
+          <ToggleButtonGroup
+            value={formType}
+            exclusive
+            onChange={(_, val) => val && setFormType(val)}
+          >
+            <ToggleButton value="ticket">Ticket Registration</ToggleButton>
+            <ToggleButton value="user">User Registration Form</ToggleButton>
+          </ToggleButtonGroup>
+        </Box>
+      </div>
+
+      {/* Form Container */}
+      <div className="bg-card rounded-lg p-6 shadow">
+        {formType === 'ticket' ? <TicketRegistrationForm /> : <FormBuilder />}
+      </div>
+    </div>
+  );
 }

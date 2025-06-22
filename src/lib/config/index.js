@@ -7,3 +7,4 @@
 
 
 export const API_ROUTE = import.meta.env.VITE_DOMAIN_NAME;
+export const API_FRONTEND = import.meta.env.VITE_FRONTEND_URL;
