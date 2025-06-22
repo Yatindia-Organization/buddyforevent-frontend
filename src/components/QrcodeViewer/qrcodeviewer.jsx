@@ -45,16 +45,25 @@ export default function QRDisplay() {
   );
 
   return (
-    <Box display="flex" justifyContent="center" mt={4} px={2}>
+    <Box
+      display="flex"
+      justifyContent="center"
+      alignItems="center"
+      mt={4}
+      px={2}
+      sx={{ overflow: 'auto' }}
+    >
       <Box
         component="img"
         src={qrcodeUrl}
-        alt="QR Code"
+        alt="QR Code Ticket"
         sx={{
-          width: '100%',
-          maxWidth: 300,    // <-- shrink the max width
-          height: 'auto',
-          objectFit: 'contain',
+          width: 600,            
+          height: 900,           
+          maxWidth: '100%',      
+          maxHeight: '100vh',    
+          objectFit: 'contain',  
+          display: 'block',
         }}
       />
     </Box>

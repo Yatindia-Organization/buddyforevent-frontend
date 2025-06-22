@@ -52,11 +52,6 @@ export default function Participants() {
     })
     if (searchText.trim()) params.set('q', searchText.trim())
 
-        console.log(
-  `${API_ROUTE}/api/v1/event/participantSearch?` +
-    new URLSearchParams({ eventId, page, limit: rowsPerPage.toString(), q: searchText })
-);
-
     fetch(`${API_ROUTE}/api/v1/event/participantSearch?${params.toString()}`)
       .then((r) => r.json())
       .then((data) => {
@@ -69,9 +64,21 @@ export default function Participants() {
   // helper to render a cell
   function renderValue(row, field) {
     const resp = row.responses.find((r) => r.fieldId === field.id)
-    if (!resp) return '' // no answer
+    if (!resp) return ''
     const val = resp.value
     if (typeof val === 'boolean') return val ? 'YES' : 'NO'
+    if (typeof val === 'object' && val !== null) {
+      // handle hyperlink objects
+      const { text, hyperlink } = val
+      if (typeof text === 'string' && typeof hyperlink === 'string') {
+        return (
+          <a href={hyperlink} target="_blank" rel="noopener noreferrer">
+            {text}
+          </a>
+        )
+      }
+      return JSON.stringify(val)
+    }
     return val ?? ''
   }
 
@@ -104,12 +111,7 @@ export default function Participants() {
             if (e.key === 'Enter') setPage(1)
           }}
         />
-        <Button
-          variant="contained"
-          onClick={() => {
-            setPage(1)
-          }}
-        >
+        <Button variant="contained" onClick={() => setPage(1)}>
           Go
         </Button>
       </Box>
@@ -118,7 +120,6 @@ export default function Participants() {
         <Table size="small">
           <TableHead>
             <TableRow>
-              {/* Dynamic headers */}
               {schema.fields.map((f) => (
                 <TableCell key={f.id} sx={{ fontWeight: 'bold' }}>
                   {f.label}
@@ -140,7 +141,6 @@ export default function Participants() {
                 ))}
 
                 <TableCell>{row.visitorCount ?? 0}</TableCell>
-
                 <TableCell>
                   {row.entryTime?.length
                     ? new Date(row.entryTime[0]).toLocaleTimeString()
@@ -151,12 +151,8 @@ export default function Participants() {
                     ? new Date(row.exitTime[0]).toLocaleTimeString()
                     : '—'}
                 </TableCell>
-                <TableCell>
-                  {row.gift == null ? '—' : row.gift ? 'YES' : 'NO'}
-                </TableCell>
-                <TableCell>
-                  {row.food == null ? '—' : row.food ? 'YES' : 'NO'}
-                </TableCell>
+                <TableCell>{row.gift == null ? '—' : row.gift ? 'YES' : 'NO'}</TableCell>
+                <TableCell>{row.food == null ? '—' : row.food ? 'YES' : 'NO'}</TableCell>
                 <TableCell>
                   <Button
                     size="small"
@@ -173,20 +169,10 @@ export default function Participants() {
         </Table>
       </TableContainer>
 
-      {/* Pagination Controls */}
-      <Box
-        mt={2}
-        display="flex"
-        justifyContent="space-between"
-        alignItems="center"
-      >
+      <Box mt={2} display="flex" justifyContent="space-between" alignItems="center">
         <Box display="flex" alignItems="center" gap={1}>
           <Typography>Page:</Typography>
-          <Select
-            size="small"
-            value={page}
-            onChange={(e) => setPage(Number(e.target.value))}
-          >
+          <Select size="small" value={page} onChange={(e) => setPage(Number(e.target.value))}>
             {Array.from({ length: totalPages }, (_, i) => (
               <MenuItem key={i + 1} value={i + 1}>
                 {i + 1}
