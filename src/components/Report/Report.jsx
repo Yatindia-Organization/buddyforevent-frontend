@@ -6,9 +6,7 @@ import {
   Button,
   CircularProgress,
   Link as MuiLink,
-  MenuItem,
   Paper,
-  Select,
   Snackbar,
   Table,
   TableBody,
@@ -26,6 +24,7 @@ export default function Report() {
   const { event: eventId } = useGlobalInfo();
   const [summary, setSummary] = useState(null);
   const [submissions, setSubmissions] = useState([]);
+  const [ticketMap, setTicketMap] = useState({});
   const [loading, setLoading] = useState(true);
   const [snackbar, setSnackbar] = useState({
     open: false, message: '', severity: 'success'
@@ -39,9 +38,8 @@ export default function Report() {
     setLoading(true);
 
     const sumP = fetch(`${API_ROUTE}/api/v1/event/report/event/${eventId}`)
-      .then(r => r.json())
-      .then(j => {
-        if (!j.success) throw new Error(j.message || 'Error loading summary');
+      .then(r => r.json()).then(j => {
+        if (!j.success) throw new Error(j.message || 'Failed loading summary');
         return j.data;
       });
 
@@ -49,10 +47,21 @@ export default function Report() {
       `${API_ROUTE}/api/v1/event/participantSearch?eventId=${eventId}&page=1&limit=10000`
     ).then(r => r.json()).then(j => j.results || []);
 
-    Promise.all([sumP, subsP])
-      .then(([sum, subs]) => {
+    const ticketsP = fetch(`${API_ROUTE}/api/v1/event/tickets/event/${eventId}`)
+      .then(r => r.json()).then(j => {
+        if (!j.success) throw new Error(j.message || 'Failed loading tickets');
+        return j.data;
+      });
+
+    Promise.all([sumP, subsP, ticketsP])
+      .then(([sum, subs, tickets]) => {
         setSummary(sum);
         setSubmissions(subs);
+        const m = {};
+        tickets.forEach(t => {
+          m[t.userSubmissionId] = t.tierName.toUpperCase();
+        });
+        setTicketMap(m);
       })
       .catch(err => showSnackbar(err.message, 'error'))
       .finally(() => setLoading(false));
@@ -62,32 +71,38 @@ export default function Report() {
     return <Typography color="error">No event selected.</Typography>;
   }
 
-  // helper to display any value:
+  // universal display helper
   const displayVal = val => {
-    if (typeof val === 'boolean') {
-      return val ? 'YES' : 'NO';
-    }
-    if (typeof val === 'string') {
-      return val.toUpperCase();
-    }
-    if (Array.isArray(val)) {
+    if (typeof val === 'boolean') return val ? 'YES' : 'NO';
+    if (typeof val === 'string') return val.toUpperCase();
+    if (Array.isArray(val))
       return val
         .map(d =>
-          new Date(d)
-            .toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })
+          new Date(d).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })
         )
         .join(', ');
-    }
-    if (val instanceof Date) {
-      return val
+    if (val instanceof Date)
+      return new Date(val)
         .toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })
         .toUpperCase();
-    }
-    if (val != null) {
-      // object or number
-      return String(val).toUpperCase();
-    }
+    if (val != null && typeof val !== 'object') return String(val).toUpperCase();
     return '';
+  };
+
+  // render a single response value, handling {text, hyperlink} objects:
+  const renderCell = val => {
+    if (val && typeof val === 'object' && 'text' in val && 'hyperlink' in val) {
+      return (
+        <MuiLink
+          href={val.hyperlink}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          {String(val.text).toUpperCase()}
+        </MuiLink>
+      );
+    }
+    return displayVal(val);
   };
 
   return (
@@ -97,7 +112,7 @@ export default function Report() {
       </Backdrop>
 
       <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 2 }}>
-        Event Report
+        EVENT REPORT
       </Typography>
 
       {/* Download */}
@@ -110,7 +125,7 @@ export default function Report() {
         </MuiLink>
       </Box>
 
-      {/* Metrics */}
+      {/* Summary Metrics */}
       {summary && (
         <Box mb={4} p={2} component={Paper}>
           <Typography variant="h6">SUMMARY</Typography>
@@ -137,11 +152,41 @@ export default function Report() {
         </Box>
       )}
 
+      {/* Ticket Tiers Detail */}
+      {summary?.ticketTiers?.length > 0 && (
+        <Box mb={4} p={2} component={Paper}>
+          <Typography variant="h6" gutterBottom>
+            TICKET TIERS
+          </Typography>
+          <Table size="small">
+            <TableHead>
+              <TableRow>
+                <TableCell>NAME</TableCell>
+                <TableCell>PRICE</TableCell>
+                <TableCell>CAPACITY</TableCell>
+                <TableCell>PERKS</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {summary.ticketTiers.map((t, i) => (
+                <TableRow key={i}>
+                  <TableCell>{t.name.toUpperCase()}</TableCell>
+                  <TableCell>{t.price}</TableCell>
+                  <TableCell>{t.capacity}</TableCell>
+                  <TableCell>{t.perks.join(', ').toUpperCase()}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </Box>
+      )}
+
       {/* Submissions Table */}
       <TableContainer component={Paper}>
         <Table size="small">
           <TableHead>
             <TableRow>
+              <TableCell>TIER</TableCell>
               {summary?.formSchema.map(f => (
                 <TableCell key={f.id}>{f.label.toUpperCase()}</TableCell>
               ))}
@@ -158,48 +203,29 @@ export default function Report() {
           <TableBody>
             {submissions.map(sub => (
               <TableRow key={sub._id}>
+                <TableCell>{ticketMap[sub._id] || '—'}</TableCell>
                 {summary.formSchema.map(fld => {
                   const resp = sub.responses.find(r => r.fieldId === fld.id);
                   return (
                     <TableCell key={fld.id}>
-                      {displayVal(resp?.value)}
+                      {renderCell(resp?.value)}
                     </TableCell>
                   );
                 })}
-
-                <TableCell>
-                  {displayVal(sub.visitorCount)}
-                </TableCell>
-                <TableCell>
-                  {displayVal(sub.entryTime)}
-                </TableCell>
-                <TableCell>
-                  {displayVal(sub.exitTime)}
-                </TableCell>
-                <TableCell>
-                  {displayVal(sub.food)}
-                </TableCell>
-                <TableCell>
-                  {displayVal(sub.foodTime)}
-                </TableCell>
-                <TableCell>
-                  {displayVal(sub.gift)}
-                </TableCell>
-                <TableCell>
-                  {displayVal(sub.giftTime)}
-                </TableCell>
-                <TableCell>
-                  {displayVal(sub.submittedAt)}
-                </TableCell>
+                <TableCell>{displayVal(sub.visitorCount)}</TableCell>
+                <TableCell>{renderCell(sub.entryTime)}</TableCell>
+                <TableCell>{renderCell(sub.exitTime)}</TableCell>
+                <TableCell>{displayVal(sub.food)}</TableCell>
+                <TableCell>{renderCell(sub.foodTime)}</TableCell>
+                <TableCell>{displayVal(sub.gift)}</TableCell>
+                <TableCell>{renderCell(sub.giftTime)}</TableCell>
+                <TableCell>{displayVal(sub.submittedAt)}</TableCell>
               </TableRow>
             ))}
-
             {!loading && submissions.length === 0 && (
               <TableRow>
                 <TableCell
-                  colSpan={
-                    (summary?.formSchema.length || 0) + /* meta cols */ 8
-                  }
+                  colSpan={(summary?.formSchema.length || 0) + 10}
                   align="center"
                 >
                   NO SUBMISSIONS
