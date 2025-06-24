@@ -33,6 +33,7 @@ import FeedbackAdmin from "./components/Admin/Feedback/AdminFeedbackView.jsx";
 import FeedbackForm from "./components/Admin/Feedback/FeedbackForm.jsx";
 import CreatePolls from "./components/Admin/Polls/CreatePoll.jsx";
 import PollVote from "./components/Admin/Polls/PollVote.jsx";
+import ParticipantLookup from "./components/Admin/ParticipantLookup/ParticipantLookup.jsx";
 
 
 function App() {
@@ -43,6 +44,7 @@ function App() {
   return (
     <Router>
       <Routes>
+        <Route path="/participant-lookup/" element={<ParticipantLookup />} />
         <Route
           path="/qr/:submissionId"
           element={<QRViewer />}  
@@ -50,6 +52,7 @@ function App() {
         <Route path="/event/:eventId/polls" element={<PollVote />} />
          <Route path="/live-count/:id" element={<EventLiveCount />} />
          <Route path="/feedback-entry/:id" element={<FeedbackForm />} />
+         <Route path="/event" element={<FeedbackForm />} />
         {isLoggedIn ? (
           // Protected Routes (after login)
           <Route path="/" element={<Main />}>

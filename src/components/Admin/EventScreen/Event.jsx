@@ -158,7 +158,7 @@ export default function Event() {
           <div className="space-y-4 p-3 bg-card rounded-lg">
             {[
               ['Live Count', liveCountPath],
-              ['Event Feedback', `event/${id}/feedback`],
+              ['Event Feedback', `feedback-entry/${id}`],
               ['Live Poll', `event/${id}/polls`],
             ].map(([label, path]) => (
               <div key={label} className="flex justify-between items-center">
