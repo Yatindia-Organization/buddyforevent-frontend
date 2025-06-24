@@ -1,209 +1,181 @@
 import React, { useState } from 'react';
+import {
+  Box, TextField, TextareaAutosize, FormControlLabel, Checkbox, Stack, Button, Typography
+} from '@mui/material';
 
 export default function FieldSettings({ field, onSave, onCancel }) {
+  const lockedTypes = ['Email', 'Phone Number', 'Custom ID'];
 
-    const [form, setForm] = useState(field);
-    const [rawOptionsText, setRawOptionsText] = useState((field.options || []).join('\n'));
+  const [form, setForm] = useState(field);
+  const [optionsText, setOptionsText] = useState((field.options || []).join('\n'));
 
+  const handleChange = e => {
+    const { name, value, type, checked } = e.target;
+    setForm(f => ({ ...f, [name]: type === 'checkbox' ? checked : value }));
+  };
 
-    const handleChange = (e) => {
-        const { name, value, type, checked } = e.target;
-        setForm((prev) => ({
-            ...prev,
-            [name]: type === 'checkbox' ? checked : value,
-        }));
-    };
+  const handleOptions = e => {
+    const text = e.target.value;
+    setOptionsText(text);
+    const opts = text.split('\n').filter(l => l.trim());
+    setForm(f => ({ ...f, options: opts }));
+  };
 
-    const handleOptionsChange = (e) => {
-        const text = e.target.value;
-        setRawOptionsText(text);
-        const options = text.split('\n').filter(opt => opt.trim());
-        setForm((prev) => ({ ...prev, options }));
-    };
+  const save = () => {
+    if (!form.label.trim()) {
+      alert('Label is required');
+      return;
+    }
+    onSave(form);
+  };
 
-    const validate = () => {
-        if (!form.label.trim()) {
-            alert('Field Label is required.');
-            return false;
-        }
+  return (
+    <Box sx={{ mt: 2, p: 2, bgcolor: 'var(--color-card-bg)', borderRadius: 1 }}>
+      <Typography variant="subtitle2" mb={1}>
+        Type: {form.type}
+      </Typography>
 
-        if (
-            ['Select Menu', 'Radio Button', 'Checkbox'].includes(form.type) &&
-            (!form.options || form.options.length === 0 || form.options.some(opt => !opt.trim()))
-        ) {
-            alert('At least one valid option is required.');
-            return false;
-        }
+      <Stack spacing={2}>
+        {/* LABEL: disabled for locked types */}
+        {lockedTypes.includes(form.type) ? (
+          <TextField
+            label="Label"
+            value={form.label}
+            size="small"
+            disabled
+          />
+        ) : (
+          <TextField
+            label="Label"
+            name="label"
+            value={form.label}
+            onChange={handleChange}
+            size="small"
+          />
+        )}
 
-        return true;
-    };
+        {'maxLength' in form && (
+          <TextField
+            label="Max Length"
+            name="maxLength"
+            value={form.maxLength}
+            onChange={handleChange}
+            size="small"
+          />
+        )}
 
-    const handleSave = () => {
-        if (validate()) onSave(form);
-    };
+        <TextField
+          label="Description"
+          name="description"
+          value={form.description}
+          onChange={handleChange}
+          size="small"
+          multiline
+        />
 
-    return (
-        <div className="p-4 mt-2 border rounded shadow bg-white">
-            <div className="mb-2 text-sm font-bold">
-                Field Type: <span className="text-gray-700">{form.type}</span>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4 mb-4">
-                <input
-                    name="label"
-                    placeholder="Enter label"
-                    value={form.label}
-                    onChange={handleChange}
-                    className="border px-2 py-1 w-full rounded"
-                />
-                {'maxLength' in form && (
-                    <input
-                        name="maxLength"
-                        placeholder="Enter max length"
-                        value={form.maxLength || ''}
-                        onChange={handleChange}
-                        className="border px-2 py-1 w-full rounded"
-                    />
-                )}
-            </div>
-
-            <textarea
-                name="description"
-                placeholder="Enter description"
-                value={form.description}
-                onChange={handleChange}
-                className="border px-2 py-1 w-full rounded mb-4"
+        {/* OPTIONS */}
+        {['Select Menu', 'Radio Button', 'Checkbox'].includes(form.type) && (
+          <>
+            <Typography variant="body2">Options (one per line):</Typography>
+            <TextareaAutosize
+              minRows={3}
+              value={optionsText}
+              onChange={handleOptions}
+              style={{
+                width: '100%',
+                padding: 8,
+                borderRadius: 4,
+                borderColor: 'var(--color-text-secondary)'
+              }}
             />
+          </>
+        )}
 
-            {/* Field-specific controls */}
-            {['Select Menu', 'Radio Button', 'Checkbox'].includes(form.type) && (
-                <div className="mb-4">
-                    <label className="block text-sm font-medium mb-1">
-                        Add Multiple Options (Each option must be a new line)
-                    </label>
-                    <textarea
-                        value={rawOptionsText}
-                        onChange={handleOptionsChange}
-                        className="border px-2 py-1 w-full rounded"
-                        rows={4}
-                        placeholder="Option 1\nOption 2\nOption 3"
-                    />
-                </div>
-            )}
+        {/* URL pattern */}
+        {form.type === 'URL' && (
+          <TextField
+            label="Validation RegExp"
+            name="validationPattern"
+            value={form.validationPattern}
+            onChange={handleChange}
+            size="small"
+          />
+        )}
 
-            {form.type === 'URL' && (
-                <input
-                    name="validationPattern"
-                    placeholder="Enter RegExp for URL validation"
-                    value={form.validationPattern || ''}
-                    onChange={handleChange}
-                    className="border px-2 py-1 w-full rounded mb-4"
+        {/* DATE */}
+        {form.type === 'Date' && (
+          <Stack direction="row" spacing={2}>
+            <TextField
+              label="Min Date"
+              name="minDate"
+              type="date"
+              value={form.minDate}
+              onChange={handleChange}
+              size="small"
+              InputLabelProps={{ shrink: true }}
+            />
+            <TextField
+              label="Max Date"
+              name="maxDate"
+              type="date"
+              value={form.maxDate}
+              onChange={handleChange}
+              size="small"
+              InputLabelProps={{ shrink: true }}
+            />
+          </Stack>
+        )}
+
+        {/* TERMS */}
+        {form.type === 'Terms & Condition' && (
+          <>
+            <TextareaAutosize
+              minRows={3}
+              name="text"
+              value={form.text}
+              onChange={handleChange}
+              style={{
+                width: '100%',
+                padding: 8,
+                borderRadius: 4,
+                borderColor: 'var(--color-text-secondary)'
+              }}
+            />
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={form.isCheckedRequired}
+                  name="isCheckedRequired"
+                  onChange={handleChange}
                 />
-            )}
+              }
+              label="User must accept"
+            />
+          </>
+        )}
 
-            {form.type === 'File Upload' && (
-                <div className="grid grid-cols-2 gap-4 mb-4">
-                    <input
-                        name="acceptedFileTypes"
-                        placeholder="Accepted file types (e.g., .pdf, .jpg)"
-                        value={form.acceptedFileTypes || ''}
-                        onChange={handleChange}
-                        className="border px-2 py-1 w-full rounded"
-                    />
-                    <input
-                        name="maxSizeMB"
-                        placeholder="Max size (MB)"
-                        value={form.maxSizeMB || ''}
-                        onChange={handleChange}
-                        type="number"
-                        className="border px-2 py-1 w-full rounded"
-                    />
-                </div>
-            )}
+        {/* TOGGLES */}
+        <Stack direction="row" spacing={1}>
+          <FormControlLabel
+            control={<Checkbox checked={form.mandatory} name="mandatory" onChange={handleChange} />}
+            label="Mandatory"
+          />
+          <FormControlLabel
+            control={<Checkbox checked={form.invisible} name="invisible" onChange={handleChange} />}
+            label="Invisible"
+          />
+        </Stack>
 
-            {form.type === 'Date' && (
-                <div className="grid grid-cols-2 gap-4 mb-4">
-                    <input
-                        type="date"
-                        name="minDate"
-                        value={form.minDate || ''}
-                        onChange={handleChange}
-                        className="border px-2 py-1 w-full rounded"
-                    />
-                    <input
-                        type="date"
-                        name="maxDate"
-                        value={form.maxDate || ''}
-                        onChange={handleChange}
-                        className="border px-2 py-1 w-full rounded"
-                    />
-                </div>
-            )}
-
-            {form.type === 'Terms & Condition' && (
-                <>
-                    <textarea
-                        name="text"
-                        placeholder="Enter terms and conditions"
-                        value={form.text || ''}
-                        onChange={handleChange}
-                        className="border px-2 py-1 w-full rounded mb-4"
-                    />
-                    <label className="block mb-4">
-                        <input
-                            type="checkbox"
-                            name="isCheckedRequired"
-                            checked={form.isCheckedRequired}
-                            onChange={handleChange}
-                        />{' '}
-                        User must accept
-                    </label>
-                </>
-            )}
-
-            <div className="flex items-center gap-4 mb-4">
-                <label>
-                    <input
-                        type="checkbox"
-                        name="mandatory"
-                        checked={form.mandatory}
-                        onChange={handleChange}
-                    />{' '}
-                    Mandatory
-                </label>
-                <label>
-                    <input
-                        type="checkbox"
-                        name="invisible"
-                        checked={form.invisible}
-                        onChange={handleChange}
-                    />{' '}
-                    Invisible
-                </label>
-                {form.type === 'Select Menu' && (
-                    <label>
-                        <input
-                            type="checkbox"
-                            name="endPoint"
-                            checked={form.endPoint}
-                            onChange={handleChange}
-                        />{' '}
-                        EndPoint
-                    </label>
-                )}
-            </div>
-
-            <div className="flex gap-2">
-                <button
-                    onClick={handleSave}
-                    className="bg-blue-600 text-white px-3 py-1 rounded shadow"
-                >
-                    Save
-                </button>
-                <button onClick={onCancel} className="text-gray-600">
-                    Cancel
-                </button>
-            </div>
-        </div>
-    );
+        {/* SAVE/CANCEL */}
+        <Stack direction="row" spacing={2} mt={1}>
+          <Button variant="contained" size="small" onClick={save}>
+            Save
+          </Button>
+          <Button variant="text" size="small" onClick={onCancel}>
+            Cancel
+          </Button>
+        </Stack>
+      </Stack>
+    </Box>
+  );
 }

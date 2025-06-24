@@ -147,7 +147,7 @@ export default function TicketRegistrationForm({ eventName }) {
                   "&:hover": { bgcolor: "var(--color-primary-hover)" },
                 }}
               >
-                Edit Tiers
+                Add / Edit Ticket Tiers
               </Button>
             </Box>
           </Box>

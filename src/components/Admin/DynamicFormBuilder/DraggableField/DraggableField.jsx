@@ -1,42 +1,60 @@
 import React, { useState } from 'react';
+import { Box, IconButton, TextField, Typography } from '@mui/material';
+import SettingsIcon from '@mui/icons-material/Settings';
+import DeleteIcon from '@mui/icons-material/Delete';
 
 export default function DraggableField({ field, onConfigure, onDelete }) {
+  // types whose labels must stay fixed
+  const lockedTypes = ['Email', 'Phone Number', 'Custom ID'];
 
-    const [editingLabel, setEditingLabel] = useState(false);
-    const [tempLabel, setTempLabel] = useState(field.label);
+  const [editingLabel, setEditingLabel] = useState(false);
+  const [tempLabel, setTempLabel] = useState(field.label);
 
+  const applyLabel = () => {
+    setEditingLabel(false);
+    field.label = tempLabel;   // or call a prop to persist this change
+  };
 
-    return (
-        <div className="bg-blue-100 p-3 rounded relative mb-2 shadow">
-            <div className="flex justify-between items-center">
+  return (
+    <Box sx={{ position: 'relative', p: 2, bgcolor: 'var(--color-card-bg)', borderRadius: 1 }}>
+      <Box display="flex" justifyContent="space-between" alignItems="center">
+        {lockedTypes.includes(field.type) ? (
+          // locked: just render the label
+          <Typography variant="subtitle2" sx={{ color: 'var(--color-text)' }}>
+            {field.label}
+          </Typography>
+        ) : editingLabel ? (
+          <TextField
+            value={tempLabel}
+            onChange={e => setTempLabel(e.target.value)}
+            onBlur={applyLabel}
+            size="small"
+            sx={{ flexGrow: 1 }}
+            autoFocus
+          />
+        ) : (
+          <Typography
+            variant="subtitle2"
+            onClick={() => setEditingLabel(true)}
+            sx={{ cursor: 'pointer', color: 'var(--color-text)' }}
+          >
+            {field.label || field.type}
+          </Typography>
+        )}
 
-                {editingLabel ? (
-                    <input
-                        value={tempLabel}
-                        onChange={(e) => setTempLabel(e.target.value)}
-                        onBlur={() => {
-                            setEditingLabel(false);
-                            updateLabel(tempLabel);
-                        }}
-                        autoFocus
-                        className="bg-transparent border-b w-full"
-                    />
-                ) : (
-                    <div className="cursor-pointer" onClick={() => setEditingLabel(true)}>
-                        {field.label || `${field.type} Name`}
-                    </div>
-                )}
+        <Box>
+          <IconButton size="small" onClick={() => onConfigure(field.id)}>
+            <SettingsIcon fontSize="small" />
+          </IconButton>
+          <IconButton size="small" onClick={() => onDelete(field.id)}>
+            <DeleteIcon fontSize="small" />
+          </IconButton>
+        </Box>
+      </Box>
 
-                <div className="flex items-center gap-3">
-                    <button onClick={() => onConfigure(field.id)} className="text-gray-600 hover:text-blue-600">
-                        <img src="/svg/setting.svg" alt="SettingsLogo" className="h-4  filter brightness-0" />
-                    </button>
-                    <button onClick={() => onDelete(field.id)} className="text-red-500 hover:text-red-700">
-                        <img src="/svg/delete.svg" alt="DeleteLogo" className="h-4" />
-                    </button>
-                </div>
-            </div>
-            <div className="text-xs text-gray-600">{field.description || 'Field Description'}</div>
-        </div>
-    );
+      <Typography variant="caption" sx={{ color: 'var(--color-text-secondary)' }}>
+        {field.description || 'Field description…'}
+      </Typography>
+    </Box>
+  );
 }

@@ -1,71 +1,94 @@
 export function getDefaultFieldSchema(type) {
-    const base = {
-        id: crypto.randomUUID(),
-        type,
+  const base = {
+    id: crypto.randomUUID(),
+    type,
+    label: '',
+    description: '',
+    mandatory: true,
+    invisible: false
+  };
+
+  switch (type) {
+    case 'Input Field':
+      return {
+        ...base,
         label: '',
-        description: '',
-        mandatory: true,
-        invisible: false
-    };
+        maxLength: ''
+      };
 
-    switch (type) {
-        case 'Input Field':
-        case 'Email':
-        case 'Textarea':
-        case 'Number Field':
-            return {
-                ...base,
-                maxLength: ''
-            };
+    case 'Email':
+      return {
+        ...base,
+        label: 'email',
+        maxLength: ''
+      };
 
-        case 'Select Menu':
-            return {
-                ...base,
-                options: ['Option 1'],
-                endPoint: false // Boolean toggle (checkbox in UI)
-            };
+    case 'Phone Number':
+      return {
+        ...base,
+        label: 'number',
+        maxLength: ''
+      };
 
-        case 'Radio Button':
-        case 'Checkbox':
-            return {
-                ...base,
-                options: ['Option 1']
-            };
+    case 'Textarea':
+      return {
+        ...base,
+        maxLength: ''
+      };
 
-        case 'URL':
-            return {
-                ...base,
-                validationPattern: ''
-            };
+    case 'Number Field':
+      return {
+        ...base,
+        maxLength: ''
+      };
 
-        case 'File Upload':
-            return {
-                ...base,
-                acceptedFileTypes: '',
-                maxSizeMB: ''
-            };
+    case 'Select Menu':
+      return {
+        ...base,
+        options: ['Option 1'],
+        endPoint: false
+      };
 
-        case 'Date':
-            return {
-                ...base,
-                minDate: '',
-                maxDate: ''
-            };
+    case 'Radio Button':
+    case 'Checkbox':
+      return {
+        ...base,
+        options: ['Option 1']
+      };
 
-        case 'Label':
-            return {
-                ...base,
-                text: 'Label Content'
-            };
+    case 'URL':
+      return {
+        ...base,
+        validationPattern: ''
+      };
 
-        case 'Terms & Condition':
-            return {
-                ...base,
-                text: 'Agree to our terms and conditions',
-                isCheckedRequired: true
-            };
+    case 'Date':
+      return {
+        ...base,
+        minDate: '',
+        maxDate: ''
+      };
 
-        default:
-            return base;
-    }
+    case 'Label':
+      return {
+        ...base,
+        text: 'Label Content'
+      };
+
+    case 'Terms & Condition':
+      return {
+        ...base,
+        text: 'Agree to our terms and conditions',
+        isCheckedRequired: true
+      };
+
+    case 'Custom ID':
+      return {
+        ...base,
+        label: 'custom id'
+      };
+
+    default:
+      return base;
+  }
 }

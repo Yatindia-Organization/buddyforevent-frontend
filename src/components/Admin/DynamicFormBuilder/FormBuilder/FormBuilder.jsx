@@ -1,28 +1,27 @@
 import React, { useState, useEffect } from 'react';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
+import { Box, Stack, Typography, Paper, Button, CircularProgress, Snackbar, Alert } from '@mui/material';
 import DraggableField from '../DraggableField/DraggableField';
 import FieldSettings from '../FieldSettings/FieldSettings';
 import ToolboxField from '../ToolboxField/ToolboxField';
 import { getDefaultFieldSchema } from '../../../../lib/config/getDefaultFieldSchema';
-import Snackbar from '@mui/material/Snackbar';
-import Alert from '@mui/material/Alert';
-import { Typography, CircularProgress } from '@mui/material';
 import { API_ROUTE } from '../../../../lib/config';
 import { useGlobalInfo } from '../../../../contexts/globalContext';
 
 const FIELD_TYPES = [
   { type: 'Input Field', icon: '🔤' },
   { type: 'Email', icon: '📧' },
+  { type: 'Phone Number', icon: '📞' },
   { type: 'Textarea', icon: '📝' },
   { type: 'Number Field', icon: '🔢' },
   { type: 'Select Menu', icon: '📋' },
   { type: 'Radio Button', icon: '🔘' },
   { type: 'Checkbox', icon: '☑️' },
   { type: 'URL', icon: '🔗' },
-  { type: 'File Upload', icon: '📁' },
   { type: 'Date', icon: '📅' },
   { type: 'Label', icon: '🏷️' },
-  { type: 'Terms & Condition', icon: '📜' }
+  { type: 'Terms & Condition', icon: '📜' },
+  { type: 'Custom ID', icon: '🆔' },
 ];
 
 export default function FormBuilder() {
@@ -30,201 +29,211 @@ export default function FormBuilder() {
   const [fields, setFields] = useState([]);
   const [editingId, setEditingId] = useState(null);
   const [finalSchema, setFinalSchema] = useState(null);
-
   const [loading, setLoading] = useState(true);
   const [formExists, setFormExists] = useState(false);
-
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'error' });
 
-  // Check for existing form on mount or when eventId changes
+  // fetch existing form
   useEffect(() => {
-    if (!eventId) {
-      setLoading(false);
-      return;
-    }
+    if (!eventId) { setLoading(false); return; }
 
-    const fetchForm = async () => {
+    (async () => {
       try {
         const res = await fetch(`${API_ROUTE}/api/v1/event/registration-form/eventId/${eventId}`);
-        if (res.status === 404) {
-          setFormExists(false);
-        } else if (res.ok) {
+        if (res.status === 404) setFormExists(false);
+        else if (res.ok) {
           const data = await res.json();
           setFields(data.fields || []);
           setFormExists(true);
         } else {
           const err = await res.json();
-          throw new Error(err.message || 'Failed to fetch form');
+          throw new Error(err.message || 'Fetch failed');
         }
       } catch (error) {
-        console.error('Error fetching existing form:', error.message);
         setSnackbar({ open: true, message: error.message, severity: 'error' });
       } finally {
         setLoading(false);
       }
-    };
-
-    fetchForm();
+    })();
   }, [eventId]);
 
   const handleDropFromToolbox = (e) => {
     e.preventDefault();
     const type = e.dataTransfer.getData('field-type');
-    const newField = getDefaultFieldSchema(type);
-    setFields([...fields, newField]);
+    setFields([...fields, getDefaultFieldSchema(type)]);
   };
 
-  const handleReorder = (result) => {
-    if (!result.destination) return;
-    const reordered = Array.from(fields);
-    const [moved] = reordered.splice(result.source.index, 1);
-    reordered.splice(result.destination.index, 0, moved);
-    setFields(reordered);
+  const handleReorder = ({ destination, source }) => {
+    if (!destination) return;
+    const arr = Array.from(fields);
+    const [m] = arr.splice(source.index, 1);
+    arr.splice(destination.index, 0, m);
+    setFields(arr);
   };
 
-  const handleSaveField = (updatedField) => {
-    setFields(fields.map(f => (f.id === updatedField.id ? updatedField : f)));
+  const handleSaveField = (updated) => {
+    setFields(fields.map(f => f.id === updated.id ? updated : f));
     setEditingId(null);
   };
 
   const handleProceed = async () => {
-    const hasEmptyLabel = fields.some(field => !field.label || field.label.trim() === '');
-    if (hasEmptyLabel) {
-      setSnackbar({ open: true, message: 'Add fields to the inputs.', severity: 'error' });
+    if (fields.some(f => !f.label.trim())) {
+      setSnackbar({ open: true, message: 'All fields need a label.', severity: 'error' });
       return;
     }
-
-    const schema = fields;
-    setFinalSchema(schema);
-
+    setFinalSchema(fields);
     try {
-      const body = { eventId, fields: schema };
-      const response = await fetch(`${API_ROUTE}/api/v1/event/registration-form`, {
+      const res = await fetch(`${API_ROUTE}/api/v1/event/registration-form`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
+        body: JSON.stringify({ eventId, fields })
       });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData?.message || `Creation failed: ${response.status}`);
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.message || `Error ${res.status}`);
       }
-
-      await response.json();
       setFormExists(true);
-      setSnackbar({ open: true, message: 'Form created successfully.', severity: 'success' });
+      setSnackbar({ open: true, message: 'Form saved!', severity: 'success' });
     } catch (error) {
-      console.error('Error submitting form:', error.message);
       setSnackbar({ open: true, message: error.message, severity: 'error' });
     }
   };
 
   const handleCancel = () => {
-    setFields([]);
-    setEditingId(null);
-    setFinalSchema(null);
+    setFields([]); setEditingId(null); setFinalSchema(null);
   };
 
   if (loading) {
-    return <div className="flex justify-center p-6"><CircularProgress /></div>;
+    return (
+      <Box display="flex" justifyContent="center" p={4}>
+        <CircularProgress />
+      </Box>
+    );
   }
 
   if (formExists && !finalSchema) {
     return (
-      <div className="p-6">
-        <Typography variant="h6" color="textSecondary" gutterBottom>
-          A registration form already exists for this event.
+      <Box p={4}>
+        <Typography variant="h6" color="textSecondary">
+          A form already exists for this event.
         </Typography>
-        <Typography variant="body2" mb={2}>
-          You cannot create a new form.
-        </Typography>
-      </div>
+      </Box>
     );
   }
 
   return (
-    <div className="p-6">
-      <Typography variant="body2" color="#E36A6C" mb={3}>
-        Please note that the participants will be receiving email, SMS, and WhatsApp messages after the registration.
+    <Box p={4}>
+      <Typography variant="body2" sx={{ color: 'var(--color-primary)' }} mb={3}>
+        Participants will receive email, SMS & WhatsApp after registering.
       </Typography>
 
-      {/* Toolbox */}
-      <h2 className="text-lg font-bold mb-4">Add New Field</h2>
-      <div className="flex gap-2 flex-wrap mb-6">
+      {/* TOOLBOX */}
+      <Typography variant="h6" gutterBottom>Add New Field</Typography>
+      <Stack direction="row" spacing={2} flexWrap="wrap" mb={4}>
         {FIELD_TYPES.map(({ type, icon }) => (
-          <ToolboxField key={type} type={type} icon={icon} onDragStart={e => e.dataTransfer.setData('field-type', type)} />
+          <ToolboxField
+            key={type}
+            type={type}
+            icon={icon}
+            onDragStart={e => e.dataTransfer.setData('field-type', type)}
+          />
         ))}
-      </div>
+      </Stack>
 
-      {/* Form Designer */}
-      <h2 className="text-lg font-bold mb-2">Form Designer</h2>
-      <div onDrop={handleDropFromToolbox} onDragOver={e => e.preventDefault()} className="min-h-[300px] border border-dashed p-4 rounded bg-gray-50">
+      {/* DESIGN AREA */}
+      <Typography variant="h6" gutterBottom>Form Designer</Typography>
+      <Box
+        onDrop={handleDropFromToolbox}
+        onDragOver={e => e.preventDefault()}
+        sx={{
+          minHeight: 300,
+          border: '2px dashed',
+          borderColor: 'text.secondary',
+          bgcolor: 'var(--color-card-bg)',
+          p: 2,
+          borderRadius: 1
+        }}
+      >
         <DragDropContext onDragEnd={handleReorder}>
-          <Droppable droppableId="form-fields">
-            {(provided) => (
-              <div {...provided.droppableProps} ref={provided.innerRef}>
-                {fields.map((field, index) => (
-                  <Draggable key={field.id} draggableId={field.id} index={index}>
-                    {(prov) => (
-                      <div ref={prov.innerRef} {...prov.draggableProps} {...prov.dragHandleProps} className="mb-2">
-                        <DraggableField
-                          field={field}
-                          index={index}
-                          onConfigure={() => setEditingId(field.id)}
-                          onDelete={() => setFields(fields.filter(f => f.id !== field.id))}
-                        />
-                        {editingId === field.id && (
-                          <FieldSettings
-                            field={field}
-                            onSave={handleSaveField}
-                            onCancel={() => setEditingId(null)}
+          <Droppable droppableId="fields">
+            {(prov) => (
+              <Box ref={prov.innerRef} {...prov.droppableProps}>
+                {fields.map((f, i) => (
+                  <Draggable key={f.id} draggableId={f.id} index={i}>
+                    {(p) => (
+                      <Box
+                        ref={p.innerRef}
+                        {...p.draggableProps}
+                        {...p.dragHandleProps}
+                        mb={2}
+                      >
+                        <Paper sx={{ p:2 }}>
+                          <DraggableField
+                            field={f}
+                            onConfigure={() => setEditingId(f.id)}
+                            onDelete={() => setFields(fields.filter(x => x.id !== f.id))}
                           />
-                        )}
-                      </div>
+                          {editingId === f.id && (
+                            <FieldSettings
+                              field={f}
+                              onSave={handleSaveField}
+                              onCancel={() => setEditingId(null)}
+                            />
+                          )}
+                        </Paper>
+                      </Box>
                     )}
                   </Draggable>
                 ))}
-                {provided.placeholder}
-                {fields.length === 0 && <p className="text-gray-400">Drag fields here to build your form</p>}
-              </div>
+                {prov.placeholder}
+                {fields.length === 0 && (
+                  <Typography color="textSecondary">Drag fields here…</Typography>
+                )}
+              </Box>
             )}
           </Droppable>
         </DragDropContext>
-      </div>
+      </Box>
 
-      {/* Proceed / Cancel buttons */}
+      {/* ACTIONS */}
       {fields.length > 0 && (
-        <div className="flex gap-4 mt-4">
-          <button onClick={handleProceed} className="bg-green-600 text-white px-4 py-2 rounded shadow">
+        <Stack direction="row" spacing={2} mt={3}>
+          <Button variant="contained" color="primary" onClick={handleProceed}>
             Proceed
-          </button>
-          <button onClick={handleCancel} className="text-red-500 px-4 py-2">
+          </Button>
+          <Button variant="outlined" color="primary" onClick={handleCancel}>
             Cancel
-          </button>
-        </div>
+          </Button>
+        </Stack>
       )}
 
-      {/* Final Schema Display */}
-      {Array.isArray(finalSchema) && finalSchema.length > 0 && (
-        <div className="mt-6">
-          <h3 className="font-semibold mb-2">Final JSON Schema (In Order)</h3>
-          <pre className="bg-gray-100 p-4 rounded text-sm overflow-auto max-h-[400px]">
-            {JSON.stringify(finalSchema, null, 2)}
-          </pre>
-        </div>
+      {/* FINAL SCHEMA */}
+      {finalSchema && (
+        <Box mt={4}>
+          <Typography variant="subtitle1" gutterBottom>Final JSON Schema:</Typography>
+          <Paper sx={{ p:2, maxHeight: 300, overflow: 'auto', bgcolor: 'var(--color-card-bg)' }}>
+            <pre style={{ margin: 0, color: 'var(--color-text)' }}>
+              {JSON.stringify(finalSchema, null, 2)}
+            </pre>
+          </Paper>
+        </Box>
       )}
 
-      {/* Snackbar */}
+      {/* SNACKBAR */}
       <Snackbar
         open={snackbar.open}
         autoHideDuration={4000}
-        onClose={() => setSnackbar(prev => ({ ...prev, open: false }))}
+        onClose={() => setSnackbar(s => ({ ...s, open: false }))}
         anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
       >
-        <Alert onClose={() => setSnackbar(prev => ({ ...prev, open: false }))} severity={snackbar.severity} sx={{ width: '100%' }}>
+        <Alert
+          onClose={() => setSnackbar(s => ({ ...s, open: false }))}
+          severity={snackbar.severity}
+          sx={{ width: '100%' }}
+        >
           {snackbar.message}
         </Alert>
       </Snackbar>
-    </div>
+    </Box>
   );
 }

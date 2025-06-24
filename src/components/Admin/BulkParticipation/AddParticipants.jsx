@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 import {
@@ -22,6 +22,8 @@ import { useGlobalInfo } from "../../../contexts/globalContext";
 
 export default function AddParticipants() {
   const { event: eventId } = useGlobalInfo();
+
+  const [formExists, setFormExists] = useState(null);
   const [excelData, setExcelData] = useState([]);
   const [selectedFile, setSelectedFile] = useState(null);
   const [snackbar, setSnackbar] = useState({
@@ -31,7 +33,28 @@ export default function AddParticipants() {
   });
   const [loading, setLoading] = useState(false);
 
-  
+  // 1) On mount, check for existing registration form
+  useEffect(() => {
+    if (!eventId) {
+      setFormExists(false);
+      return;
+    }
+    fetch(`${API_ROUTE}/api/v1/event/registration-form/eventId/${eventId}`)
+      .then((res) => {
+        if (res.status === 404) {
+          setFormExists(false);
+        } else if (res.ok) {
+          setFormExists(true);
+        } else {
+          throw new Error("Unexpected response");
+        }
+      })
+      .catch((err) => {
+        console.error("Error checking form existence:", err);
+        setFormExists(false);
+      });
+  }, [eventId]);
+
   const showToast = (message, severity = "info") => {
     setSnackbar({ open: true, message, severity });
   };
@@ -39,7 +62,6 @@ export default function AddParticipants() {
     setSnackbar((prev) => ({ ...prev, open: false }));
   };
 
-  
   const handleDownloadTemplate = async () => {
     try {
       const res = await fetch(
@@ -54,7 +76,6 @@ export default function AddParticipants() {
     }
   };
 
-  
   const handleFileUpload = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -74,7 +95,6 @@ export default function AddParticipants() {
     reader.readAsArrayBuffer(file);
   };
 
-  
   const handleGenerateTickets = async () => {
     if (!selectedFile) return;
     setLoading(true);
@@ -90,7 +110,7 @@ export default function AddParticipants() {
       if (!res.ok)
         throw new Error(result.error || "Failed to generate tickets");
       showToast(`Successfully generated ${result.count} tickets`, "success");
-      
+
       setExcelData([]);
       setSelectedFile(null);
     } catch (err) {
@@ -101,6 +121,30 @@ export default function AddParticipants() {
     }
   };
 
+  // 2) While we don’t yet know if the form exists, show a loader
+  if (formExists === null) {
+    return (
+      <Box display="flex" justifyContent="center" p={4}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  // 3) If no form exists, prompt to create one
+  if (!formExists) {
+    return (
+      <Box sx={{ maxWidth: 600, mx: "auto", mt: 8, textAlign: "center" }}>
+        <Typography variant="h6" gutterBottom>
+          No registration form found
+        </Typography>
+        <Typography variant="body2" sx={{ mb: 2 }}>
+          Please create a registration form first before adding participants.
+        </Typography>
+      </Box>
+    );
+  }
+
+  // 4) Otherwise, render the bulk‐upload UI
   return (
     <Box sx={{ maxWidth: 1000, mx: "auto" }}>
       <Typography
