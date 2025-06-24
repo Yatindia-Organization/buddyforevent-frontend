@@ -47,7 +47,7 @@ export default function MainLayout() {
               src="/svg/profile.svg"
               alt="Profile"
               className="h-10 rounded-full cursor-pointer"
-              onClick={handleProfileIconClick}
+              // onClick={handleProfileIconClick}
             />
           </div>
         </div>

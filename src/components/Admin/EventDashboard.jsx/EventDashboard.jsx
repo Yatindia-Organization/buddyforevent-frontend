@@ -15,6 +15,8 @@ export default function EventDashboard() {
     { name: "Bulk Ticket", route: "bulk-ticket" },
     { name: "Single Registration", route: "single-registration" },
     { name: "View Participants", route: "view-participants" },
+    { name: "Feedback", route: "feedbackView" },
+    { name: "Poll", route: "create-poll" },
     { name: "Payment History", route: "payment-history" },
     { name: "Email/Message", route: "email-message" },
     { name: "Reports", route: "reports" },

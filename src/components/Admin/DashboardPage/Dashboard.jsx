@@ -106,7 +106,6 @@ const Dashboard = () => {
                     { id: 'publicEvent', label: 'Public' },
                     { id: 'gift_tracking', label: 'Gifts' },
                     { id: 'food_tracking', label: 'Food' },
-                    { id: 'actions', label: 'Actions' },
                   ].map((col) => (
                     <TableCell
                       key={col.id}
@@ -162,14 +161,6 @@ const Dashboard = () => {
                       </TableCell>
                       <TableCell className="text-text">
                         {row.food_tracking ? 'Yes' : 'No'}
-                      </TableCell>
-                      <TableCell>
-                        <IconButton onClick={() => console.log('Edit', row)}>
-                          <EditIcon className="text-primary" />
-                        </IconButton>
-                        <IconButton onClick={() => console.log('Delete', row)}>
-                          <DeleteIcon className="text-primary" />
-                        </IconButton>
                       </TableCell>
                     </TableRow>
                   ))

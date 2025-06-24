@@ -4,9 +4,11 @@ import { API_ROUTE } from '../../../lib/config';
 import { useTheme } from '../../../contexts/ThemeContext';
 import { Paper, Typography, Container, Table, TableContainer, TableHead, TableRow, TableCell, TableBody, TablePagination } from '@mui/material';
 import { format } from 'date-fns';
+import { useGlobalInfo } from '../../../contexts/globalContext';
 
 const FeedbackAdmin = () => {
-  const { eventId } = useParams();
+    const context = useGlobalInfo();
+    const eventId = context.event;
   const { theme } = useTheme();
   const [feedbacks, setFeedbacks] = useState([]);
   const [loading, setLoading] = useState(true);

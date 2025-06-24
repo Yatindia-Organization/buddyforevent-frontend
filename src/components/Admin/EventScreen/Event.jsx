@@ -128,18 +128,31 @@ export default function Event() {
           </p>
 
           <div className="flex justify-between">
-            <Link to={`/event/${id}/edit`} className="flex items-center gap-2 text-primary">
+            <Link to={`/event-dashboard/eventedit/${id}`} className="flex items-center gap-2 text-primary">
               <img className="w-6" src="/svg/edit.svg" alt="Edit" />
               Edit Event
             </Link>
-            <Link to={`/event/${id}/design`} className="flex items-center gap-2 text-primary">
-              <img className="w-6" src="/svg/edit-design.svg" alt="Design" />
-              Edit Design
-            </Link>
-            <Link to={`/event/${id}/preview`} className="flex items-center gap-2 text-primary">
-              <img className="w-6" src="/svg/eye.svg" alt="Preview" />
-              Preview
-            </Link>
+            <button
+            onClick={async () => {
+              if (!window.confirm('Are you sure you want to delete this event?')) return;
+              try {
+                const res = await fetch(`${API_ROUTE}/api/v1/event/userid/${id}`, {
+                  method: 'DELETE',
+                });
+                if (!res.ok) throw new Error('Failed to delete');
+                // Optionally notify user
+                showSnackbar('Event deleted', 'success');
+                // redirect somewhere—e.g. back to admin list
+                window.location.href = '/admin/events';
+              } catch (err) {
+                showSnackbar(err.message, 'error');
+              }
+            }}
+            className="flex items-center gap-2 text-red-500 hover:opacity-80"
+          >
+            <img className="w-6" src="/svg/icons8-delete-red.svg" alt="Delete" />
+            Delete Event
+          </button>
           </div>
 
           <div className="space-y-4 p-3 bg-card rounded-lg">

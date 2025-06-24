@@ -18,6 +18,7 @@ import ParticipantRegistration from "./components/Admin/ParticipantRegistration/
 import { useGlobalInfo } from "./contexts/globalContext.jsx";
 import AddParticipants from "./components/Admin/BulkParticipation/AddParticipants.jsx";
 import Event from "./components/Admin/EventScreen/Event.jsx";
+import EditEvent from "./components/Admin/EventScreen/EditEvent.jsx";
 import Email from "./components/Admin/Email/Email.jsx";
 import Profile from "./components/profile/Profile.jsx";
 import Report from "./components/Report/Report.jsx";
@@ -30,6 +31,8 @@ import QRViewer from "./components/QrcodeViewer/qrcodeviewer.jsx";
 import EventLiveCount from "./components/Admin/LiveCount/LiveCount.jsx";
 import FeedbackAdmin from "./components/Admin/Feedback/AdminFeedbackView.jsx";
 import FeedbackForm from "./components/Admin/Feedback/FeedbackForm.jsx";
+import CreatePolls from "./components/Admin/Polls/CreatePoll.jsx";
+import PollVote from "./components/Admin/Polls/PollVote.jsx";
 
 
 function App() {
@@ -44,6 +47,7 @@ function App() {
           path="/qr/:submissionId"
           element={<QRViewer />}  
         />
+        <Route path="/event/:eventId/polls" element={<PollVote />} />
          <Route path="/live-count/:id" element={<EventLiveCount />} />
          <Route path="/feedback-entry/:id" element={<FeedbackForm />} />
         {isLoggedIn ? (
@@ -51,7 +55,6 @@ function App() {
           <Route path="/" element={<Main />}>
             <Route index element={<Navigate to="dashboard" replace />} />
             <Route path="dashboard" element={<Dashboard />} />
-            <Route path="feedbackView/:eventId" element={<FeedbackAdmin />} />
             <Route path="/event-dashboard" element={<EventDashboard />} >
               <Route index element={<Navigate to="event/:id" replace />} />
               <Route path="event/:id" element={<Event />} />
@@ -62,6 +65,9 @@ function App() {
               <Route path="payment-history" element={<PaymentHistory />} />
               <Route path="email-message" element={<Email />} />
               <Route path="reports" element={<Report />} />
+              <Route path="eventedit/:event" element={<EditEvent />} />
+              <Route path="polls/createPoll" element={<CreatePolls />} />
+              <Route path="feedbackView" element={<FeedbackAdmin />} />
              
               <Route path="create-poll" element={<CreatePoll />} />
             </Route>

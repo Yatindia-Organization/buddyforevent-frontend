@@ -19,7 +19,9 @@ export function GlobalProvider({ children }) {
     localStorage.getItem("userId") || null
   );
 
-  const [event, setEvent] = useState([]);
+    const [event, setEvent] = useState(() =>
+    localStorage.getItem("currentEvent") || null
+  );
 
   // Log whenever `event` changes
   useEffect(() => {
@@ -45,6 +47,7 @@ export function GlobalProvider({ children }) {
     console.group("[GlobalContext] changeEvent called");
   console.trace("payload:", newEvent);
   console.groupEnd();
+  localStorage.setItem("currentEvent", newEvent);
     setEvent(newEvent);
   };
 
