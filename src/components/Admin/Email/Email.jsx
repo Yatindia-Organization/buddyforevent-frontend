@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import {
     Box, Button, Typography, Paper, Snackbar, Alert,
-    ToggleButtonGroup, ToggleButton, TextField, Tabs, Tab, Chip, Dialog, DialogTitle, DialogActions
+    ToggleButtonGroup, ToggleButton, TextField, Tabs, Tab, Chip, Dialog, DialogTitle, DialogActions, DialogContent
 } from '@mui/material';
+import { useTheme } from '../../../contexts/ThemeContext';
 
 export default function Email() {
+    const { theme } = useTheme();
     const [activeTab, setActiveTab] = useState('email');
     const [recipientType, setRecipientType] = useState('single');
 
@@ -23,7 +25,6 @@ export default function Email() {
         const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         return re.test(email);
     };
-
 
     const handleSnackbarClose = () => setSnackbar({ ...snackbar, open: false });
 
@@ -107,7 +108,6 @@ export default function Email() {
         }
     };
 
-
     const handleSend = () => {
         const recipients = recipientType === 'single' ? singleTo : multipleTo.join(', ');
         setSnackbar({
@@ -120,11 +120,21 @@ export default function Email() {
     };
 
     return (
-        <Box sx={{ maxWidth: 1000 }}>
-            <Typography variant="h5" gutterBottom sx={{ fontWeight: 'bold', color: '#5D5C8D' }}>
+        <Box 
+            className="min-h-screen p-6 bg-bg text-text font-sans"
+            sx={{ maxWidth: 1000 }}
+        >
+            <Typography 
+                variant="h5" 
+                className="font-heading text-text mb-4"
+                sx={{ fontWeight: 'bold' }}
+            >
                 Send Ticket Manually
             </Typography>
-            <Typography variant="body2" sx={{ mb: 3 }}>
+            <Typography 
+                variant="body2" 
+                className="text-text-secondary mb-6"
+            >
                 Send an {activeTab === 'email' ? 'email' : 'SMS message'} to participants
             </Typography>
 
@@ -132,9 +142,20 @@ export default function Email() {
             <Tabs
                 value={activeTab}
                 onChange={handleTabChange}
-                textColor="primary"
-                indicatorColor="primary"
-                sx={{ mb: 3 }}
+                sx={{ 
+                    mb: 3,
+                    '& .MuiTab-root': {
+                        color: 'var(--color-text-secondary)',
+                        textTransform: 'none',
+                        fontWeight: 'medium',
+                        '&.Mui-selected': {
+                            color: 'var(--color-primary)',
+                        }
+                    },
+                    '& .MuiTabs-indicator': {
+                        backgroundColor: 'var(--color-primary)',
+                    }
+                }}
             >
                 <Tab value="email" label="Email" />
                 <Tab value="message" label="Message" />
@@ -147,17 +168,26 @@ export default function Email() {
                     exclusive
                     onChange={handleRecipientTypeChange}
                     sx={{
-                        backgroundColor: '#f5f5f5',
+                        backgroundColor: 'var(--color-card-bg)',
                         borderRadius: '8px',
+                        border: '1px solid var(--color-text-secondary)',
                         '& .MuiToggleButton-root': {
                             textTransform: 'none',
-                            fontWeight: 'bold',
+                            fontWeight: 'medium',
                             border: 'none',
-                            px: 2
-                        },
-                        '& .Mui-selected': {
-                            borderBottom: '3px solid #4CAF50',
-                            backgroundColor: 'transparent'
+                            px: 3,
+                            py: 1,
+                            color: 'var(--color-text-secondary)',
+                            '&.Mui-selected': {
+                                backgroundColor: 'var(--color-primary)',
+                                color: '#fff',
+                                '&:hover': {
+                                    backgroundColor: 'var(--color-primary-hover)',
+                                }
+                            },
+                            '&:hover': {
+                                backgroundColor: 'var(--color-card-bg)',
+                            }
                         }
                     }}
                 >
@@ -167,16 +197,43 @@ export default function Email() {
             </Box>
 
             {/* Form */}
-            <Paper elevation={3} sx={{ p: 4, borderRadius: 2 }}>
+            <Paper 
+                className="bg-card p-6 rounded-xl shadow-md"
+                elevation={3}
+            >
                 {/* To Field */}
                 {recipientType === 'single' ? (
                     <TextField
                         label={`To (${activeTab === 'email' ? 'Email' : 'Phone Number'})`}
                         fullWidth
-                        variant="standard"
+                        variant="outlined"
+                        size="small"
                         value={singleTo}
                         onChange={(e) => setSingleTo(e.target.value)}
-                        sx={{ mb: 3 }}
+                        sx={{ 
+                            mb: 3,
+                            '& .MuiOutlinedInput-root': {
+                                backgroundColor: 'var(--color-bg)',
+                                '& fieldset': {
+                                    borderColor: 'var(--color-text-secondary)',
+                                },
+                                '&:hover fieldset': {
+                                    borderColor: 'var(--color-primary)',
+                                },
+                                '&.Mui-focused fieldset': {
+                                    borderColor: 'var(--color-primary)',
+                                }
+                            },
+                            '& .MuiInputLabel-root': {
+                                color: 'var(--color-text-secondary)',
+                                '&.Mui-focused': {
+                                    color: 'var(--color-primary)',
+                                }
+                            },
+                            '& .MuiOutlinedInput-input': {
+                                color: 'var(--color-text)',
+                            }
+                        }}
                         error={
                             recipientType === 'single' &&
                             ((activeTab === 'email' && singleTo && !isValidEmail(singleTo)) ||
@@ -195,10 +252,33 @@ export default function Email() {
                         <TextField
                             label={`Add ${activeTab === 'email' ? 'Email' : 'Phone'} and press Enter`}
                             fullWidth
-                            variant="standard"
+                            variant="outlined"
+                            size="small"
                             value={inputValue}
                             onChange={(e) => setInputValue(e.target.value)}
-                            
+                            sx={{
+                                '& .MuiOutlinedInput-root': {
+                                    backgroundColor: 'var(--color-bg)',
+                                    '& fieldset': {
+                                        borderColor: 'var(--color-text-secondary)',
+                                    },
+                                    '&:hover fieldset': {
+                                        borderColor: 'var(--color-primary)',
+                                    },
+                                    '&.Mui-focused fieldset': {
+                                        borderColor: 'var(--color-primary)',
+                                    }
+                                },
+                                '& .MuiInputLabel-root': {
+                                    color: 'var(--color-text-secondary)',
+                                    '&.Mui-focused': {
+                                        color: 'var(--color-primary)',
+                                    }
+                                },
+                                '& .MuiOutlinedInput-input': {
+                                    color: 'var(--color-text)',
+                                }
+                            }}
                             onKeyDown={(e) => {
                                 if (['Enter', ','].includes(e.key)) {
                                     e.preventDefault();
@@ -215,7 +295,6 @@ export default function Email() {
                                     }
                                 }
                             }}
-
                             error={
                                 activeTab === 'message' &&
                                 inputValue &&
@@ -229,7 +308,7 @@ export default function Email() {
                                     : ''
                             }
                         />
-                        <Box sx={{ mt: 1, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                        <Box sx={{ mt: 2, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                             {multipleTo.map((val, index) => {
                                 const isInvalid = activeTab === 'email'
                                     ? !isValidEmail(val)
@@ -240,8 +319,16 @@ export default function Email() {
                                         key={index}
                                         label={val}
                                         onDelete={() => removeRecipient(index)}
-                                        color={isInvalid ? 'error' : 'primary'}
-                                        variant={isInvalid ? 'outlined' : 'filled'}
+                                        sx={{
+                                            backgroundColor: isInvalid ? 'var(--color-error)' : 'var(--color-primary)',
+                                            color: '#fff',
+                                            '& .MuiChip-deleteIcon': {
+                                                color: '#fff',
+                                                '&:hover': {
+                                                    color: 'rgba(255, 255, 255, 0.7)',
+                                                }
+                                            }
+                                        }}
                                     />
                                 );
                             })}
@@ -255,13 +342,40 @@ export default function Email() {
                         <TextField
                             label="Subject"
                             fullWidth
-                            variant="standard"
+                            variant="outlined"
+                            size="small"
                             value={subject}
                             onChange={(e) => setSubject(e.target.value)}
-                            sx={{ mb: 1 }}
+                            sx={{ 
+                                mb: 1,
+                                '& .MuiOutlinedInput-root': {
+                                    backgroundColor: 'var(--color-bg)',
+                                    '& fieldset': {
+                                        borderColor: 'var(--color-text-secondary)',
+                                    },
+                                    '&:hover fieldset': {
+                                        borderColor: 'var(--color-primary)',
+                                    },
+                                    '&.Mui-focused fieldset': {
+                                        borderColor: 'var(--color-primary)',
+                                    }
+                                },
+                                '& .MuiInputLabel-root': {
+                                    color: 'var(--color-text-secondary)',
+                                    '&.Mui-focused': {
+                                        color: 'var(--color-primary)',
+                                    }
+                                },
+                                '& .MuiOutlinedInput-input': {
+                                    color: 'var(--color-text)',
+                                }
+                            }}
                         />
-                        <Typography variant="caption" sx={{ mb: 2, display: 'block', color: 'gray' }}>
-                            Subject should be maximum 60 characters
+                        <Typography 
+                            variant="caption" 
+                            className="text-text-secondary mb-4 block"
+                        >
+                            Subject should be maximum 60 characters ({subject.length}/60)
                         </Typography>
                     </>
                 )}
@@ -272,20 +386,56 @@ export default function Email() {
                     fullWidth
                     multiline
                     minRows={4}
-                    variant="standard"
+                    variant="outlined"
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
-                    sx={{ mb: 3 }}
+                    sx={{ 
+                        mb: 4,
+                        '& .MuiOutlinedInput-root': {
+                            backgroundColor: 'var(--color-bg)',
+                            '& fieldset': {
+                                borderColor: 'var(--color-text-secondary)',
+                            },
+                            '&:hover fieldset': {
+                                borderColor: 'var(--color-primary)',
+                            },
+                            '&.Mui-focused fieldset': {
+                                borderColor: 'var(--color-primary)',
+                            }
+                        },
+                        '& .MuiInputLabel-root': {
+                            color: 'var(--color-text-secondary)',
+                            '&.Mui-focused': {
+                                color: 'var(--color-primary)',
+                            }
+                        },
+                        '& .MuiOutlinedInput-input': {
+                            color: 'var(--color-text)',
+                        }
+                    }}
                 />
 
                 <Button
                     variant="contained"
-                    color="success"
                     onClick={handleSend}
                     disabled={isSendDisabled()}
-                    sx={{ textTransform: 'none', px: 4 }}
+                    sx={{ 
+                        textTransform: 'none', 
+                        px: 4,
+                        py: 1.5,
+                        backgroundColor: 'var(--color-primary)',
+                        color: '#fff',
+                        fontWeight: 'medium',
+                        '&:hover': {
+                            backgroundColor: 'var(--color-primary-hover)',
+                        },
+                        '&:disabled': {
+                            backgroundColor: 'var(--color-text-secondary)',
+                            color: 'var(--color-bg)',
+                        }
+                    }}
                 >
-                    Send
+                    Send {activeTab === 'email' ? 'Email' : 'Message'}
                 </Button>
             </Paper>
 
@@ -296,20 +446,64 @@ export default function Email() {
                 onClose={handleSnackbarClose}
                 anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
             >
-                <Alert onClose={handleSnackbarClose} severity={snackbar.severity} sx={{ width: '100%' }}>
+                <Alert 
+                    onClose={handleSnackbarClose} 
+                    severity={snackbar.severity} 
+                    sx={{ 
+                        width: '100%',
+                        backgroundColor: 'var(--color-card-bg)',
+                        color: 'var(--color-text)',
+                        '& .MuiAlert-icon': {
+                            color: 'var(--color-primary)',
+                        }
+                    }}
+                >
                     {snackbar.message}
                 </Alert>
             </Snackbar>
 
             {/* Dialog for Confirming Mode Change */}
-            <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)}>
-                <DialogTitle>Unsaved Input Detected</DialogTitle>
-                <Typography sx={{ px: 3 }}>
-                    Changing mode will clear all inputs. Are you sure you want to continue?
-                </Typography>
+            <Dialog 
+                open={dialogOpen} 
+                onClose={() => setDialogOpen(false)}
+                PaperProps={{
+                    sx: {
+                        backgroundColor: 'var(--color-card-bg)',
+                        color: 'var(--color-text)',
+                    }
+                }}
+            >
+                <DialogTitle className="text-text">
+                    Unsaved Input Detected
+                </DialogTitle>
+                <DialogContent>
+                    <Typography className="text-text-secondary">
+                        Changing mode will clear all inputs. Are you sure you want to continue?
+                    </Typography>
+                </DialogContent>
                 <DialogActions>
-                    <Button onClick={() => setDialogOpen(false)}>Cancel</Button>
-                    <Button onClick={confirmChange} color="error">Yes, Clear</Button>
+                    <Button 
+                        onClick={() => setDialogOpen(false)}
+                        sx={{
+                            color: 'var(--color-text-secondary)',
+                            '&:hover': {
+                                backgroundColor: 'var(--color-bg)',
+                            }
+                        }}
+                    >
+                        Cancel
+                    </Button>
+                    <Button 
+                        onClick={confirmChange}
+                        sx={{
+                            color: 'var(--color-error)',
+                            '&:hover': {
+                                backgroundColor: 'var(--color-bg)',
+                            }
+                        }}
+                    >
+                        Yes, Clear
+                    </Button>
                 </DialogActions>
             </Dialog>
         </Box>

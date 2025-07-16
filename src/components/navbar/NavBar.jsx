@@ -39,6 +39,13 @@ const NavBar = () => {
         })}
       </ul>
 
+<div className="flex-1 my-4">
+  <img 
+    src="/images/ad.jpg" 
+    alt="Advertisement" 
+    className="w-full h-full object-cover rounded-md"
+  />
+</div>
       <button
         onClick={handleLogout}
         className="mt-6 w-full bg-red-600 hover:bg-red-700 text-white py-2 rounded"
