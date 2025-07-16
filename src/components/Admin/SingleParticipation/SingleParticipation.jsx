@@ -1,3 +1,4 @@
+// src/components/Admin/SingleParticipation.jsx
 import React, { useState, useEffect } from 'react'
 import {
   Box,
@@ -24,13 +25,12 @@ export default function SingleParticipation() {
 
   const [schema, setSchema] = useState(null)
   const [ticketTiers, setTicketTiers] = useState([])
-  const [values, setValues] = useState({ tierName: '', visitorCount: 0 })
+  const [values, setValues] = useState({})
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
-
-  // Snackbar state
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' })
 
+  // fetch form schema + tiers
   useEffect(() => {
     if (!eventId) return
 
@@ -43,17 +43,18 @@ export default function SingleParticipation() {
         if (forms.length) {
           const form = forms[0]
           setSchema(form)
-          const initial = { visitorCount: 0 }
+          // Initialize form values
+          const initial = { tierName: '', visitorCount: 0 }
           form.fields.forEach(f => {
-            initial[f.id] = f.type === 'Checkbox' ? false : ''
+            initial[f.id] = ''           // every field starts blank
           })
-          setValues({ tierName: '', ...initial })
+          setValues(initial)
         }
         if (tiersRes.success) {
           setTicketTiers(tiersRes.data.ticket_tiers)
         }
       })
-      .catch(err => console.error(err))
+      .catch(console.error)
       .finally(() => setLoading(false))
   }, [eventId])
 
@@ -63,8 +64,7 @@ export default function SingleParticipation() {
 
   const handleSubmit = () => {
     if (!schema || !values.tierName) {
-      setSnackbar({ open: true, message: 'Please select a ticket tier', severity: 'error' })
-      return
+      return setSnackbar({ open: true, message: 'Please select a ticket tier', severity: 'error' })
     }
 
     setSubmitting(true)
@@ -83,16 +83,11 @@ export default function SingleParticipation() {
       }),
     })
       .then(async res => {
-        if (!res.ok) {
-          const errMsg = await res.text()
-          throw new Error(errMsg)
-        }
+        if (!res.ok) throw new Error(await res.text())
         return res.json()
       })
       .then(data => {
-        // show success then redirect
-        setSnackbar({ open: true, message: 'Ticket successfully created!', severity: 'success' })
-        // wait a moment to let user see the message, then navigate
+        setSnackbar({ open: true, message: 'Ticket created!', severity: 'success' })
         setTimeout(() => navigate(`/qr/${data._id}`), 1500)
       })
       .catch(err => {
@@ -104,46 +99,41 @@ export default function SingleParticipation() {
 
   const handleCloseSnackbar = () => setSnackbar(s => ({ ...s, open: false }))
 
-  if (loading) {
-    return (
-      <Box display="flex" justifyContent="center" alignItems="center" height="100vh">
-        <CircularProgress />
-      </Box>
-    )
-  }
+  if (loading) return (
+    <Box display="flex" justifyContent="center" alignItems="center" height="100vh">
+      <CircularProgress />
+    </Box>
+  )
 
-  if (submitting) {
-    return (
-      <Box display="flex" flexDirection="column" justifyContent="center" alignItems="center" height="100vh">
-        <CircularProgress />
-        <Typography mt={2}>Ticket successfully updated!</Typography>
-      </Box>
-    )
-  }
+  if (submitting) return (
+    <Box display="flex" flexDirection="column" justifyContent="center" alignItems="center" height="100vh">
+      <CircularProgress />
+      <Typography mt={2}>Processing…</Typography>
+    </Box>
+  )
 
-  if (!schema) {
-    return (
-      <Box p={4} textAlign="center">
-        <Typography variant="h6">No registration form found.</Typography>
-        <Button variant="contained" color="primary" href="/event-dashboard/participant-registration">
-          Build a Registration Form
-        </Button>
-      </Box>
-    )
-  }
+  if (!schema) return (
+    <Box p={4} textAlign="center">
+      <Typography variant="h6">No registration form found.</Typography>
+      <Button variant="contained" color="primary" href="/event-dashboard/participant-registration">
+        Build a Registration Form
+      </Button>
+    </Box>
+  )
 
   return (
     <Box display="flex" justifyContent="center" p={3}>
       <Paper elevation={3} sx={{ width: '100%', maxWidth: 400 }}>
         <Box p={3}>
-          <Typography variant="h6" gutterBottom color="#9A93B3">
+          <Typography variant="h5" gutterBottom color="#9A93B3">
             {schema.title || 'Register'}
           </Typography>
-          <Typography variant="body2" mb={2}>
+          <Typography variant="body1" mb={3}>
             {schema.description}
           </Typography>
 
           <Stack spacing={2}>
+            {/* Ticket tier selector */}
             <TextField
               select
               label="Ticket Tier"
@@ -160,70 +150,129 @@ export default function SingleParticipation() {
               ))}
             </TextField>
 
-            {schema.fields.map(f => {
-              const common = { key: f.id, fullWidth: true, size: 'small', margin: 'dense', variant: 'outlined' }
-              switch (f.type) {
-                case 'Input Field':
-                case 'Email':
-                  return (
-                    <TextField
-                      {...common}
-                      type={f.type === 'Email' ? 'email' : 'text'}
-                      label={f.label}
-                      value={values[f.id] ?? ''}
-                      onChange={e => handleChange(f.id, e.target.value)}
-                    />
-                  )
-                case 'Textarea':
-                  return (
-                    <TextField
-                      {...common}
-                      multiline
-                      rows={3}
-                      label={f.label}
-                      value={values[f.id] ?? ''}
-                      onChange={e => handleChange(f.id, e.target.value)}
-                    />
-                  )
-                case 'Number Field':
-                  return (
-                    <TextField
-                      {...common}
-                      type="number"
-                      label={f.label}
-                      InputProps={{ inputProps: { min: 0 } }}
-                      value={values[f.id] ?? ''}
-                      onChange={e => handleChange(f.id, e.target.value)}
-                    />
-                  )
-                case 'Select Menu':
-                  return (
-                    <TextField
-                      {...common}
-                      select
-                      label={f.label}
-                      value={values[f.id] ?? ''}
-                      onChange={e => handleChange(f.id, e.target.value)}
-                    >
-                      {f.options.map(o => (
-                        <MenuItem key={o} value={o}>{o}</MenuItem>
-                      ))}
-                    </TextField>
-                  )
-                case 'Checkbox':
-                  return (
-                    <FormControlLabel
-                      key={f.id}
-                      control={<Checkbox size="small" checked={values[f.id] || false} onChange={e => handleChange(f.id, e.target.checked)} />}
-                      label={f.label}
-                      sx={{ mt: 1 }}
-                    />
-                  )
-                default:
-                  return null
-              }
-            })}
+            {/* Dynamic fields */}
+            {schema.fields.map(f => (
+              <Box key={f.id}>
+                {/* Label */}
+                <Typography variant="subtitle1" gutterBottom>
+                  {f.label}
+                </Typography>
+                {/* Description */}
+                {f.description && (
+                  <Typography variant="body2" color="text.secondary" gutterBottom>
+                    {f.description}
+                  </Typography>
+                )}
 
+                {(() => {
+                  const common = {
+                    fullWidth: true,
+                    size: 'small',
+                    margin: 'dense',
+                    variant: 'outlined',
+                    value: values[f.id] ?? '',
+                  }
+                  switch (f.type) {
+                    case 'Input Field':
+                    case 'Email':
+                      return (
+                        <TextField
+                          {...common}
+                          type={f.type === 'Email' ? 'email' : 'text'}
+                          onChange={e => handleChange(f.id, e.target.value)}
+                        />
+                      )
+                    case 'Phone Number':
+                      return (
+                        <TextField
+                          {...common}
+                          type="tel"
+                          helperText="Digits only"
+                          onChange={e => handleChange(f.id, e.target.value.replace(/\D/g, ''))}
+                        />
+                      )
+                    case 'Textarea':
+                      return (
+                        <TextField
+                          {...common}
+                          multiline
+                          rows={3}
+                          onChange={e => handleChange(f.id, e.target.value)}
+                        />
+                      )
+                    case 'Number Field':
+                      return (
+                        <TextField
+                          {...common}
+                          type="number"
+                          InputProps={{ inputProps: { min: 0 } }}
+                          onChange={e => handleChange(f.id, e.target.value)}
+                        />
+                      )
+                    case 'Select Menu':
+                    case 'Radio Button':
+                      return (
+                        <TextField
+                          {...common}
+                          select
+                          onChange={e => handleChange(f.id, e.target.value)}
+                        >
+                          {f.options.map(o => <MenuItem key={o} value={o}>{o}</MenuItem>)}
+                        </TextField>
+                      )
+                    case 'Checkbox':
+                    case 'Terms & Condition':
+                      return (
+                        <FormControlLabel
+                          control={
+                            <Checkbox
+                              checked={!!values[f.id]}
+                              onChange={e => handleChange(f.id, e.target.checked)}
+                            />
+                          }
+                          label=""
+                        />
+                      )
+                    case 'URL':
+                      return (
+                        <TextField
+                          {...common}
+                          type="url"
+                          onChange={e => handleChange(f.id, e.target.value)}
+                        />
+                      )
+                    case 'Date':
+                      return (
+                        <TextField
+                          {...common}
+                          type="date"
+                          InputLabelProps={{ shrink: true }}
+                          onChange={e => handleChange(f.id, e.target.value)}
+                        />
+                      )
+                    case 'Label':
+                      // purely static label already above
+                      return null
+                    case 'Custom ID':
+                      return (
+                        <TextField
+                          {...common}
+                          onChange={e => handleChange(f.id, e.target.value)}
+                        />
+                      )
+                    default:
+                      return (
+                        <TextField
+                          {...common}
+                          onChange={e => handleChange(f.id, e.target.value)}
+                        />
+                      )
+                  }
+                })()}
+              </Box>
+            ))}
+
+            {/* Additional visitors */}
             <TextField
               fullWidth
               size="small"
@@ -231,7 +280,7 @@ export default function SingleParticipation() {
               variant="outlined"
               type="number"
               label="Additional Visitors"
-              helperText="Enter extra guests (0 if none)."
+              helperText="Enter extra guests (0 if none)"
               InputProps={{ inputProps: { min: 0 } }}
               value={values.visitorCount}
               onChange={e => handleChange('visitorCount', e.target.value)}
@@ -241,7 +290,9 @@ export default function SingleParticipation() {
           <Divider sx={{ my: 2 }} />
 
           <Box display="flex" justifyContent="flex-end" gap={1}>
-            <Button size="small" onClick={() => navigate(-1)}>Cancel</Button>
+            <Button size="small" onClick={() => navigate(-1)}>
+              Cancel
+            </Button>
             <Button size="small" variant="contained" onClick={handleSubmit}>
               Proceed
             </Button>
@@ -249,7 +300,12 @@ export default function SingleParticipation() {
         </Box>
       </Paper>
 
-      <Snackbar open={snackbar.open} autoHideDuration={3000} onClose={handleCloseSnackbar} anchorOrigin={{ vertical: 'top', horizontal: 'center' }}>
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={3000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
         <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: '100%' }}>
           {snackbar.message}
         </Alert>

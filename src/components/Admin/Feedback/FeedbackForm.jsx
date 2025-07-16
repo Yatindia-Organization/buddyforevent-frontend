@@ -9,6 +9,7 @@ import {
   Button,
   Box,
   Paper,
+  Rating,
 } from '@mui/material';
 
 const FeedbackForm = () => {
@@ -42,11 +43,16 @@ const FeedbackForm = () => {
 
   return (
     <Container maxWidth="sm">
-      <Paper elevation={3} sx={{ p: 3 }}>
+      <Paper elevation={3} sx={{ p: 3, mt: 4 }}>
         <Typography variant="h5" gutterBottom>
           Submit Feedback
         </Typography>
-        <Box component="form" sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <Box
+          component="form"
+          sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}
+          noValidate
+          autoComplete="off"
+        >
           <TextField
             label="Your Name"
             variant="outlined"
@@ -54,14 +60,19 @@ const FeedbackForm = () => {
             onChange={(e) => setUser(e.target.value)}
             required
           />
-          <TextField
-            label="Rating (1-5)"
-            type="number"
-            inputProps={{ min: 1, max: 5 }}
-            value={rating}
-            onChange={(e) => setRating(Number(e.target.value))}
-            required
-          />
+
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Typography component="legend">Rating</Typography>
+            <Rating
+              name="feedback-rating"
+              value={rating}
+              onChange={(_, newValue) => {
+                if (newValue !== null) setRating(newValue);
+              }}
+              precision={1}
+            />
+          </Box>
+
           <TextField
             label="Comment"
             multiline
@@ -71,7 +82,13 @@ const FeedbackForm = () => {
             onChange={(e) => setComment(e.target.value)}
             required
           />
-          <Button variant="contained" color="primary" onClick={submitFeedback} disabled={loading}>
+
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={submitFeedback}
+            disabled={loading}
+          >
             {loading ? 'Submitting...' : 'Submit'}
           </Button>
         </Box>

@@ -63,7 +63,12 @@ const FeedbackAdmin = () => {
           <TableBody>
             {feedbacks.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((feedback) => (
               <TableRow key={feedback._id}>
-                <TableCell>{feedback.user.name}</TableCell>
+              <TableCell>
+   { typeof feedback.user === 'string'
+       ? feedback.user
+       : feedback.user.name || JSON.stringify(feedback.user)
+   }
+ </TableCell>
                 <TableCell>{feedback.rating}</TableCell>
                 <TableCell>{feedback.comment}</TableCell>
                 <TableCell>{format(new Date(feedback.createdAt), 'PPPp')}</TableCell>

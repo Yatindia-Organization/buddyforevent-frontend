@@ -1,4 +1,3 @@
-// src/components/forms/CreateAccountForm.jsx
 import React, { useState } from "react";
 import { API_ROUTE } from "../../lib/config";
 import { useGlobalInfo } from "../../contexts/globalContext";
@@ -15,7 +14,7 @@ import {
   Link as MuiLink,
 } from "@mui/material";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
-import { Turnstile } from "@marsidev/react-turnstile";
+// import { Turnstile } from "@marsidev/react-turnstile";  // ← commented out
 
 export default function CreateAccountForm() {
   const context = useGlobalInfo();
@@ -31,11 +30,11 @@ export default function CreateAccountForm() {
     user_type: "admin",
   });
   const [errors, setErrors] = useState({});
-  const [captchaToken, setCaptchaToken] = useState(null);
+  // const [captchaToken, setCaptchaToken] = useState(null); // ← removed
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
-  const SITE_KEY = import.meta.env.VITE_CLOUDFLARE_SITE_KEY;
+  // const SITE_KEY = import.meta.env.VITE_CLOUDFLARE_SITE_KEY; // ← no longer needed
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: "",
@@ -46,13 +45,17 @@ export default function CreateAccountForm() {
 
   const handleChange = e => {
     const { name, value } = e.target;
-    setForm(f => ({ ...f, [name]: name === "phone_number" ? value.replace(/\D/g, "") : value }));
+    setForm(f => ({
+      ...f,
+      [name]: name === "phone_number" ? value.replace(/\D/g, "") : value,
+    }));
   };
 
   const validate = () => {
     const errs = {};
     if (!form.name) errs.name = "Name is required";
-    if (!/^\d{10}$/.test(form.phone_number)) errs.phone_number = "Enter a 10-digit phone";
+    if (!/^\d{10}$/.test(form.phone_number))
+      errs.phone_number = "Enter a 10-digit phone";
     if (!form.company_name) errs.company_name = "Required";
     if (!form.company_gst_number) errs.company_gst_number = "Required";
     if (!form.location) errs.location = "Required";
@@ -61,15 +64,15 @@ export default function CreateAccountForm() {
       errs.password = "Min 8 chars, 1 uppercase, 1 number";
     if (form.password !== form.confirmPassword)
       errs.confirmPassword = "Passwords must match";
-    // if (!captchaToken) errs.captcha = "Complete the CAPTCHA";
+    // captcha no longer required
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
 
   const isFormValid = () =>
-    Object.keys(form).every(k =>
-      k === "captchaToken" ? true : Boolean(form[k])
-    ) && form.password === form.confirmPassword && !loading;
+    Object.keys(form).every(k => Boolean(form[k])) &&
+    form.password === form.confirmPassword &&
+    !loading;
 
   const handleSubmit = async e => {
     e.preventDefault();
@@ -91,7 +94,7 @@ export default function CreateAccountForm() {
       localStorage.setItem("userType", user.user_type);
       localStorage.setItem("userId", user._id);
       setSnackbar({ open: true, message: "Account created!", severity: "success" });
-      setTimeout(() => window.location.href = "/", 1000);
+      setTimeout(() => (window.location.href = "/"), 1000);
     } catch (err) {
       setSnackbar({ open: true, message: err.message, severity: "error" });
     } finally {
@@ -107,7 +110,11 @@ export default function CreateAccountForm() {
         onClose={handleSnackbarClose}
         anchorOrigin={{ vertical: "top", horizontal: "center" }}
       >
-        <Alert onClose={handleSnackbarClose} severity={snackbar.severity} sx={{ width: "100%" }}>
+        <Alert
+          onClose={handleSnackbarClose}
+          severity={snackbar.severity}
+          sx={{ width: "100%" }}
+        >
           {snackbar.message}
         </Alert>
       </Snackbar>
@@ -120,7 +127,7 @@ export default function CreateAccountForm() {
           bgcolor: "var(--color-card-bg)",
           color: "var(--color-text)",
           maxHeight: "80vh",
-          overflowY: "auto"
+          overflowY: "auto",
         }}
       >
         <Typography variant="h5" fontWeight="bold" mb={1}>
@@ -199,6 +206,7 @@ export default function CreateAccountForm() {
               }}
             />
 
+            {/*
             <div>
               <Turnstile
                 siteKey={SITE_KEY}
@@ -211,14 +219,9 @@ export default function CreateAccountForm() {
                 </Typography>
               )}
             </div>
+            */}
 
-            <Button
-              type="submit"
-              variant="contained"
-              color="primary"
-              disabled={!isFormValid()}
-              fullWidth
-            >
+            <Button type="submit" variant="contained" color="primary" disabled={!isFormValid()} fullWidth>
               {loading ? "Submitting..." : "Sign Up"}
             </Button>
 

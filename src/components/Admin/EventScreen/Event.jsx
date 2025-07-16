@@ -1,33 +1,44 @@
 // src/components/Admin/EventScreen/Event.jsx
 import React, { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { Alert, Snackbar } from '@mui/material';
+import { Link } from 'react-router-dom';
+import {
+  Alert,
+  Snackbar,
+  Select,
+  MenuItem,
+  Typography,
+  Box,
+  IconButton,
+  CircularProgress
+} from '@mui/material';
+import { ArrowBackIos, ArrowForwardIos } from '@mui/icons-material';
+import { green, orange, red, grey } from '@mui/material/colors';
 import { format } from 'date-fns';
-import EventStatsChart from '../../echarts/EventStatsChart';
 import { API_FRONTEND, API_ROUTE } from '../../../lib/config';
 import { useGlobalInfo } from '../../../contexts/globalContext';
 import { useTheme } from '../../../contexts/ThemeContext';
 
 export default function Event() {
   const { theme } = useTheme();
-  const context = useGlobalInfo();
-  const id = context.event;
+  const { event: eventId } = useGlobalInfo();
 
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [poll, setPoll] = useState({ question: '', options: [''] });
-  const [imageSize, setImageSize] = useState('medium');
-  const [snackbar, setSnackbar] = useState({
-    open: false,
-    message: '',
-    severity: 'success',
-  });
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+  const [imgIndex, setImgIndex] = useState(0);
+
+  // map each status to a color
+  const colorMap = {
+    published: green[700],
+    pause:    orange[800],
+    cancelled:red[700],
+    end:      grey[600],
+  };
 
   useEffect(() => {
-    const fetchEvent = async () => {
+    async function fetchEvent() {
       try {
-        const res = await fetch(`${API_ROUTE}/api/v1/event/eventid/${id}`);
+        const res = await fetch(`${API_ROUTE}/api/v1/event/eventid/${eventId}`);
         if (!res.ok) throw new Error('Event not found');
         const { data } = await res.json();
         setEvent(data);
@@ -37,59 +48,57 @@ export default function Event() {
       } finally {
         setLoading(false);
       }
-    };
-    fetchEvent();
-  }, [id]);
+    }
+    if (eventId) fetchEvent();
+  }, [eventId]);
 
-  const showSnackbar = (message, severity = 'success') =>
-    setSnackbar({ open: true, message, severity });
-
-  const handlePollChange = (i, v) => {
-    const opts = [...poll.options];
-    opts[i] = v;
-    setPoll({ ...poll, options: opts });
+  const showSnackbar = (msg, sev = 'success') => {
+    setSnackbar({ open: true, message: msg, severity: sev });
   };
-  const addPollOption = () =>
-    setPoll({ ...poll, options: [...poll.options, ''] });
-  const handlePollSubmit = async () => {
-    const valid = poll.options.filter(o => o.trim());
-    if (!poll.question.trim()) return showSnackbar('Poll question cannot be empty', 'error');
-    if (valid.length < 2) return showSnackbar('Please add at least two poll options.', 'error');
+
+  const handleStatusChange = async e => {
+    const newStatus = e.target.value;
     try {
-      const res = await fetch(`${API_ROUTE}/api/v1/events/${id}/polls`, {
-        method: 'POST',
+      const res = await fetch(`${API_ROUTE}/api/v1/event/userid/${eventId}`, {
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...poll, options: valid }),
+        body: JSON.stringify({ status: newStatus }),
       });
-      if (!res.ok) throw new Error('Failed to create poll');
-      showSnackbar('Poll created successfully!');
-      setModalOpen(false);
-      setPoll({ question: '', options: [''] });
+      if (!res.ok) throw new Error('Failed to update status');
+      setEvent(evt => ({ ...evt, status: newStatus }));
+      showSnackbar(`Status updated to ${newStatus}`);
     } catch (err) {
+      console.error(err);
       showSnackbar(err.message, 'error');
     }
   };
 
-  const getImageHeight = () => {
-    if (imageSize === 'small') return 'h-40';
-    if (imageSize === 'large') return 'h-96';
-    return 'h-64';
-  };
+  const prevImage = () => setImgIndex(i => Math.max(0, i - 1));
+  const nextImage = () =>
+    setImgIndex(i =>
+      event && event.event_images
+        ? Math.min(event.event_images.length - 1, i + 1)
+        : i
+    );
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen bg-bg text-text font-sans">
-        <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-text" />
-      </div>
+      <Box
+        className="flex items-center justify-center h-screen bg-bg text-text font-sans"
+      >
+        <CircularProgress />
+      </Box>
     );
   }
 
   if (!event) {
     return (
-      <div className="flex flex-col items-center justify-center h-screen bg-bg text-text-secondary font-sans space-y-4">
-        <h1 className="text-2xl font-heading">Event Not Found</h1>
-        <p>The event you’re looking for doesn’t exist or has been removed.</p>
-      </div>
+      <Box
+        className="flex flex-col items-center justify-center h-screen bg-bg text-text-secondary font-sans space-y-4"
+      >
+        <Typography variant="h4">Event Not Found</Typography>
+        <Typography>The event you’re looking for doesn’t exist or has been removed.</Typography>
+      </Box>
     );
   }
 
@@ -103,147 +112,211 @@ export default function Event() {
     end_date,
     start_time,
     end_time,
+    status,
+    event_images = [],
   } = event;
 
-  const formattedDate = `${format(new Date(start_date), 'MMM d, yyyy')} – ${format(new Date(end_date), 'MMM d, yyyy')}`;
+  const formattedDate = `${format(new Date(start_date), 'MMM d, yyyy')} – ${format(
+    new Date(end_date),
+    'MMM d, yyyy'
+  )}`;
   const formattedTime = `${start_time} – ${end_time}`;
 
-  // build the new Live Count URL
-  const liveCountPath = `live-count/${id}`;
-  const liveCountUrl = `${API_ROUTE}/${liveCountPath}`;
+  // shareable & live‐count links
+  const liveCountPath = `#/live-count/${eventId}`;
+  const shareable = [
+    ['Shareable Link', `#/participant-lookup?eventId=${eventId}`],
+    ['Live Count', liveCountPath],
+    ['Event Feedback', `#/feedback-entry/${eventId}`],
+    ['Live Poll', `#/event/${eventId}/polls`],
+  ];
 
   return (
-    <div className="min-h-screen p-8 bg-bg text-text font-sans">
-      <div className="flex flex-col md:flex-row gap-8">
+    <Box className="min-h-screen p-8 bg-bg text-text font-sans">
+      <Box className="flex flex-col md:flex-row gap-8">
         {/* LEFT COLUMN */}
-        <div className="w-full md:w-1/2 space-y-6">
+        <Box className="w-full md:w-1/2 space-y-6">
           <img
             src={cover_image}
             alt="Event Cover"
-            className={`object-cover rounded ${getImageHeight()} bg-card`}
+            className="object-cover rounded h-64 bg-card w-full"
           />
-
-          <p className="text-center text-sm text-text-secondary font-semibold">
+          <Typography variant="caption" className="text-center block text-text-secondary">
             Please upload a picture of size 1280 × 720 px
-          </p>
+          </Typography>
 
-          <div className="flex justify-between">
-            <Link to={`/event-dashboard/eventedit/${id}`} className="flex items-center gap-2 text-primary">
-              <img className="w-6" src="/svg/edit.svg" alt="Edit" />
+          <Box className="flex justify-between">
+            <Link to={`/event-dashboard/eventedit/${eventId}`} className="text-primary flex items-center gap-2">
+              <img src="/svg/edit.svg" alt="Edit" className="w-6" />
               Edit Event
             </Link>
             <button
-            onClick={async () => {
-              if (!window.confirm('Are you sure you want to delete this event?')) return;
-              try {
-                const res = await fetch(`${API_ROUTE}/api/v1/event/userid/${id}`, {
-                  method: 'DELETE',
-                });
-                if (!res.ok) throw new Error('Failed to delete');
-                // Optionally notify user
-                showSnackbar('Event deleted', 'success');
-                // redirect somewhere—e.g. back to admin list
-                window.location.href = '/admin/events';
-              } catch (err) {
-                showSnackbar(err.message, 'error');
-              }
-            }}
-            className="flex items-center gap-2 text-red-500 hover:opacity-80"
-          >
-            <img className="w-6" src="/svg/icons8-delete-red.svg" alt="Delete" />
-            Delete Event
-          </button>
-          </div>
+              className="text-red-500 flex items-center gap-2 hover:opacity-80"
+              onClick={async () => {
+                if (!window.confirm('Delete this event?')) return;
+                try {
+                  const res = await fetch(`${API_ROUTE}/api/v1/event/userid/${eventId}`, {
+                    method: 'DELETE',
+                  });
+                  if (!res.ok) throw new Error('Failed to delete');
+                  showSnackbar('Event deleted');
+                  window.location.href = '/admin/events';
+                } catch (err) {
+                  console.error(err);
+                  showSnackbar(err.message, 'error');
+                }
+              }}
+            >
+              <img src="/svg/icons8-delete-red.svg" alt="Delete" className="w-6" />
+              Delete Event
+            </button>
+          </Box>
 
-          <div className="space-y-4 p-3 bg-card rounded-lg">
-            {[
-              ['Live Count', liveCountPath],
-              ['Event Feedback', `feedback-entry/${id}`],
-              ['Live Poll', `event/${id}/polls`],
-            ].map(([label, path]) => (
-              <div key={label} className="flex justify-between items-center">
-                <span className="font-medium">{label} URL</span>
+          <Box className="space-y-4 p-3 bg-card rounded-lg">
+            {shareable.map(([label, path]) => (
+              <Box key={label} className="flex justify-between items-center">
+                <Typography className="font-medium">{label} URL</Typography>
                 <a
                   href={`${API_FRONTEND}/${path}`}
-                  className="underline text-primary truncate w-40"
-                  target={label === 'Live Count' ? '' : '_blank'}
+                  target={label === 'Live Count' ? undefined : '_blank'}
                   rel="noreferrer"
+                  className="underline text-primary truncate w-40"
                 >
                   {`${API_FRONTEND}/${path}`}
                 </a>
-                {/* <div className="flex items-center space-x-1">
-                  <img src="/svg/copy.svg" alt="Copy" />
-                  <span className="font-medium">COPY</span>
-                </div>
-                <div className="flex items-center space-x-1">
-                  <img src="/svg/logo-whatsapp.svg" alt="Share" />
-                  <span className="font-medium">SHARE</span>
-                </div> */}
-              </div>
+              </Box>
             ))}
-          </div>
-        </div>
+          </Box>
+        </Box>
 
         {/* RIGHT COLUMN */}
-        <div className="w-full md:w-1/2 space-y-8">
-          <h1 className="text-3xl font-heading">{name}</h1>
+        <Box className="w-full md:w-1/2 space-y-6">
+          <Typography variant="h3" className="font-heading">{name}</Typography>
 
-          {/* Status / Actions */}
-          <div className="flex gap-2">
-            <span className="px-3 py-1 bg-green-600 text-white rounded">PUBLISHED</span>
-            <button className="px-3 py-1 bg-yellow-500 text-white rounded">PAUSE EVENT</button>
-            <button className="px-3 py-1 bg-red-500 text-white rounded">CANCEL EVENT</button>
-          </div>
+          {/* ——— STATUS ——— */}
+          <Box display="flex" alignItems="center" gap={2}>
+            <Typography>Status:</Typography>
 
-          {/* Logo */}
-          <div className="flex items-center justify-between">
-            <span className="text-lg font-medium">{`EVENT LOGO`}</span>
+            {status === 'end' ? (
+              <Typography
+                sx={{
+                  color: colorMap.end,
+                  fontWeight: 'bold',
+                  textTransform: 'capitalize'
+                }}
+              >
+                Ended
+              </Typography>
+            ) : (
+              <Select
+                value={status}
+                onChange={handleStatusChange}
+                size="small"
+                renderValue={val => (
+                  <Typography sx={{
+                    color: colorMap[val],
+                    fontWeight: 'bold',
+                    textTransform: 'capitalize'
+                  }}>
+                    {val}
+                  </Typography>
+                )}
+                sx={{
+                  '& .MuiSelect-select': {
+                    color: colorMap[status],
+                    fontWeight: 'bold',
+                    textTransform: 'capitalize'
+                  }
+                }}
+              >
+                <MenuItem value="published">
+                  <Typography sx={{ color: colorMap.published }}>Published</Typography>
+                </MenuItem>
+                <MenuItem value="pause">
+                  <Typography sx={{ color: colorMap.pause }}>Pause</Typography>
+                </MenuItem>
+                <MenuItem value="cancelled">
+                  <Typography sx={{ color: colorMap.cancelled }}>Cancelled</Typography>
+                </MenuItem>
+              </Select>
+            )}
+          </Box>
+
+          {/* ——— LOGO ——— */}
+          <Box className="flex items-center justify-between">
+            <Typography variant="h6">EVENT LOGO</Typography>
             <img src={logo_image} alt="Logo" className="w-24 rounded-full shadow" />
-          </div>
+          </Box>
 
-          {/* Description & Overview */}
-          <div className="p-4 bg-card rounded-lg space-y-4 text-text text-sm">
-            <div>
-              <p className="font-medium">EVENT DESCRIPTION</p>
-              <p>{description}</p>
-            </div>
-            <div>
-              <p className="font-medium">EVENT OVERVIEW</p>
-              <div className="mt-2 space-y-2 text-text-secondary">
-                <div className="flex items-center gap-2">
-                  <img className="w-4" src="/svg/location-pin.svg" alt="" />
-                  <span>{location}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <img className="w-4" src="/svg/calender.svg" alt="" />
-                  <span>{formattedDate}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <img className="w-4" src="/svg/timer.svg" alt="" />
-                  <span>{formattedTime}</span>
-                </div>
-              </div>
-            </div>
-          </div>
+          {/* ——— DESCRIPTION & OVERVIEW ——— */}
+          <Box className="p-4 bg-card rounded-lg space-y-4 text-sm text-text">
+            <Box>
+              <Typography variant="subtitle1">EVENT DESCRIPTION</Typography>
+              <Typography>{description}</Typography>
+            </Box>
+            <Box>
+              <Typography variant="subtitle1">EVENT OVERVIEW</Typography>
+              <Box className="mt-2 space-y-2 text-text-secondary">
+                <Box className="flex items-center gap-2">
+                  <img src="/svg/location-pin.svg" alt="" className="w-4" />
+                  <Typography>{location}</Typography>
+                </Box>
+                <Box className="flex items-center gap-2">
+                  <img src="/svg/calender.svg" alt="" className="w-4" />
+                  <Typography>{formattedDate}</Typography>
+                </Box>
+                <Box className="flex items-center gap-2">
+                  <img src="/svg/timer.svg" alt="" className="w-4" />
+                  <Typography>{formattedTime}</Typography>
+                </Box>
+              </Box>
+            </Box>
+          </Box>
 
-          {/* Poll & Snackbar */}
-          {modalOpen && <div>…modal…</div>}
-          <Snackbar
-            open={snackbar.open}
-            autoHideDuration={4000}
-            onClose={() => setSnackbar(o => ({ ...o, open: false }))}
-            anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
-          >
-            <Alert
-              onClose={() => setSnackbar(o => ({ ...o, open: false }))}
-              severity={snackbar.severity}
-              sx={{ width: '100%' }}
-            >
-              {snackbar.message}
-            </Alert>
-          </Snackbar>
-        </div>
-      </div>
-    </div>
+          {/* ——— IMAGE CAROUSEL ——— */}
+          <Typography className="font-medium">EVENT IMAGES</Typography>
+          {event_images.length > 0 && (
+            <Box className="relative">
+              <img
+                src={event_images[imgIndex]}
+                alt={`Slide ${imgIndex + 1}`}
+                className="w-full rounded bg-card object-contain"
+                style={{ maxHeight: '400px' }}
+              />
+              <IconButton
+                onClick={prevImage}
+                disabled={imgIndex === 0}
+                sx={{ position: 'absolute', top: '50%', left: 8 }}
+              >
+                <ArrowBackIos />
+              </IconButton>
+              <IconButton
+                onClick={nextImage}
+                disabled={imgIndex === event_images.length - 1}
+                sx={{ position: 'absolute', top: '50%', right: 8 }}
+              >
+                <ArrowForwardIos />
+              </IconButton>
+            </Box>
+          )}
+        </Box>
+      </Box>
+
+      {/* ——— GLOBAL SNACKBAR ——— */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={4000}
+        onClose={() => setSnackbar(s => ({ ...s, open: false }))}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert
+          onClose={() => setSnackbar(s => ({ ...s, open: false }))}
+          severity={snackbar.severity}
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
+    </Box>
   );
 }

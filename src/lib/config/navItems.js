@@ -26,11 +26,6 @@ const navConfig = {
             label: 'Create Events',
             path: '/create-event',
             icon: '/svg/create-event.svg'
-        },
-        {
-            label: 'Report Page',
-            path: '/reports',
-            icon: '/svg/report.svg'
         }
     ],
     user: [

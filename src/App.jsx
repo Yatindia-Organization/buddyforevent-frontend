@@ -1,5 +1,5 @@
 import React from "react";
-import { BrowserRouter as Router, Route, Routes, Navigate } from "react-router-dom";
+import { HashRouter as Router, Route, Routes, Navigate } from "react-router-dom";
 
 import LandingPage from "./components/LandingPage/LandingPage.jsx";
 import Login from "./components/forms/LoginForm.jsx";
@@ -51,7 +51,7 @@ function App() {
         />
         <Route path="/event/:eventId/polls" element={<PollVote />} />
          <Route path="/live-count/:id" element={<EventLiveCount />} />
-         <Route path="/feedback-entry/:id" element={<FeedbackForm />} />
+         <Route path="/feedback-entry/:eventId" element={<FeedbackForm />} />
          <Route path="/event" element={<FeedbackForm />} />
         {isLoggedIn ? (
           // Protected Routes (after login)

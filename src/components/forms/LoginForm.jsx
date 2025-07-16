@@ -188,7 +188,7 @@ export default function LoginForm() {
 
             <Typography variant="body2" textAlign="center">
               Don't have an account?{" "}
-              <MuiLink component="a" href="/create-account" underline="hover">
+              <MuiLink component="a" href="#/create-account" underline="hover">
                 Sign up for free
               </MuiLink>
             </Typography>
