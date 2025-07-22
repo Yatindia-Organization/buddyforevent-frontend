@@ -34,6 +34,10 @@ import FeedbackForm from "./components/Admin/Feedback/FeedbackForm.jsx";
 import CreatePolls from "./components/Admin/Polls/CreatePoll.jsx";
 import PollVote from "./components/Admin/Polls/PollVote.jsx";
 import ParticipantLookup from "./components/Admin/ParticipantLookup/ParticipantLookup.jsx";
+import PublicEventsDashboard from "./components/PublicEvents/PublicEventsDashboard.jsx";
+import AllPublicEvents from "./components/PublicEvents/AllPublicEvents.jsx";
+import EventDetails from "./components/PublicEvents/EventDetails.jsx";
+import RegistrationForm from "./components/PublicEvents/RegistrationForm.jsx";
 
 
 function App() {
@@ -49,6 +53,10 @@ function App() {
           path="/qr/:submissionId"
           element={<QRViewer />}  
         />
+        <Route path="/public-events" element={<PublicEventsDashboard />} />
+        <Route path="/event/:eventId/details" element={<EventDetails />} />
+        <Route path="/event/:eventId/register" element={<RegistrationForm />} />
+        <Route path="/events" element={<AllPublicEvents />} />
         <Route path="/event/:eventId/polls" element={<PollVote />} />
          <Route path="/live-count/:id" element={<EventLiveCount />} />
          <Route path="/feedback-entry/:eventId" element={<FeedbackForm />} />

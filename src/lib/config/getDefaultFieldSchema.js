@@ -27,6 +27,7 @@ export function getDefaultFieldSchema(type) {
       return {
         ...base,
         label: 'number',
+        description: 'Please enter your WhatsApp number',
         maxLength: ''
       };
 
@@ -39,7 +40,9 @@ export function getDefaultFieldSchema(type) {
     case 'Number Field':
       return {
         ...base,
-        maxLength: ''
+        maxLength: '',
+        minValue: '',
+        maxValue: ''
       };
 
     case 'Select Menu':
@@ -59,7 +62,8 @@ export function getDefaultFieldSchema(type) {
     case 'URL':
       return {
         ...base,
-        validationPattern: ''
+        validationPattern: '',
+        maxLength: ''
       };
 
     case 'Date':
@@ -85,7 +89,8 @@ export function getDefaultFieldSchema(type) {
     case 'Custom ID':
       return {
         ...base,
-        label: 'custom id'
+        label: 'custom id',
+        customValue: ''
       };
 
     default:

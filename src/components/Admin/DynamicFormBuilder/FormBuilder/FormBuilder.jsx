@@ -31,7 +31,26 @@ export default function FormBuilder() {
   const [finalSchema, setFinalSchema] = useState(null);
   const [loading, setLoading] = useState(true);
   const [formExists, setFormExists] = useState(false);
+  const [isPublicEvent, setIsPublicEvent] = useState(false);
+  const [mandatoryFieldsAdded, setMandatoryFieldsAdded] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'error' });
+
+  // Check if event is public
+  useEffect(() => {
+    if (!eventId) { setLoading(false); return; }
+
+    (async () => {
+      try {
+        const res = await fetch(`${API_ROUTE}/api/v1/event/eventid/${eventId}`);
+        if (res.ok) {
+          const eventData = await res.json();
+          setIsPublicEvent(eventData.data.public_event);
+        }
+      } catch (error) {
+        console.error('Error checking event type:', error);
+      }
+    })();
+  }, [eventId]);
 
   // fetch existing form
   useEffect(() => {
@@ -40,8 +59,16 @@ export default function FormBuilder() {
     (async () => {
       try {
         const res = await fetch(`${API_ROUTE}/api/v1/event/registration-form/eventId/${eventId}`);
-        if (res.status === 404) setFormExists(false);
-        else if (res.ok) {
+        if (res.status === 404) {
+          setFormExists(false);
+          // If public event and no existing form, add mandatory fields
+          if (isPublicEvent && !mandatoryFieldsAdded) {
+            const emailField = getDefaultFieldSchema('Email');
+            const phoneField = getDefaultFieldSchema('Phone Number');
+            setFields([emailField, phoneField]);
+            setMandatoryFieldsAdded(true);
+          }
+        } else if (res.ok) {
           const data = await res.json();
           setFields(data.fields || []);
           setFormExists(true);
@@ -55,7 +82,7 @@ export default function FormBuilder() {
         setLoading(false);
       }
     })();
-  }, [eventId]);
+  }, [eventId, isPublicEvent, mandatoryFieldsAdded]);
 
   const handleDropFromToolbox = (e) => {
     e.preventDefault();
@@ -74,6 +101,28 @@ export default function FormBuilder() {
   const handleSaveField = (updated) => {
     setFields(fields.map(f => f.id === updated.id ? updated : f));
     setEditingId(null);
+  };
+
+  const handleDeleteField = (fieldId) => {
+    const fieldToDelete = fields.find(f => f.id === fieldId);
+    
+    // For public events, prevent deletion if it would leave no email or phone
+    if (isPublicEvent && (fieldToDelete.type === 'Email' || fieldToDelete.type === 'Phone Number')) {
+      const remainingFields = fields.filter(f => f.id !== fieldId);
+      const hasEmail = remainingFields.some(f => f.type === 'Email');
+      const hasPhone = remainingFields.some(f => f.type === 'Phone Number');
+      
+      if (!hasEmail && !hasPhone) {
+        setSnackbar({ 
+          open: true, 
+          message: 'For public events, at least one contact field (Email or Phone Number) must remain.', 
+          severity: 'warning' 
+        });
+        return;
+      }
+    }
+    
+    setFields(fields.filter(f => f.id !== fieldId));
   };
 
   const handleProceed = async () => {
@@ -127,6 +176,21 @@ export default function FormBuilder() {
         Participants will receive email, SMS & WhatsApp after registering.
       </Typography>
 
+      {/* Public Event Notice */}
+      {isPublicEvent && (
+        <Box sx={{ 
+          mb: 3, 
+          p: 2, 
+          bgcolor: 'rgba(33, 150, 243, 0.1)', 
+          border: '1px solid rgba(33, 150, 243, 0.3)',
+          borderRadius: 1 
+        }}>
+          <Typography variant="body2" sx={{ color: 'var(--color-primary)' }}>
+            📢 For public events, Email and Phone Number fields are mandatory. At least one must remain in your form.
+          </Typography>
+        </Box>
+      )}
+
       {/* TOOLBOX */}
       <Typography variant="h6" gutterBottom>Add New Field</Typography>
       <Stack direction="row" spacing={2} flexWrap="wrap" mb={4}>
@@ -171,7 +235,7 @@ export default function FormBuilder() {
                           <DraggableField
                             field={f}
                             onConfigure={() => setEditingId(f.id)}
-                            onDelete={() => setFields(fields.filter(x => x.id !== f.id))}
+                            onDelete={() => handleDeleteField(f.id)}
                           />
                           {editingId === f.id && (
                             <FieldSettings
