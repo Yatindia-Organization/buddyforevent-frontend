@@ -15,9 +15,15 @@ export default function EventLiveCount() {
   // Fetch live metrics; showLoader controls full-page spinner
   const fetchMetrics = async (showLoader = false) => {
     try {
+      const token = localStorage.getItem('token');
       if (showLoader) setLoading(true);
       const res = await fetch(
-        `${API_ROUTE}/api/v1/event/liveCount/metrics?eventId=${id}`
+        `${API_ROUTE}/api/v1/event/liveCount/metrics?eventId=${id}`,
+ {
+   headers: {
+     'Authorization': `Bearer ${token}`
+   }
+ }
       );
       if (!res.ok) throw new Error('Failed to load live count');
       const data = await res.json();
@@ -33,7 +39,13 @@ export default function EventLiveCount() {
   // Fetch event name and location once
   const fetchEventInfo = async () => {
     try {
-      const res = await fetch(`${API_ROUTE}/api/v1/event/eventid/${id}`);
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API_ROUTE}/api/v1/event/eventid/${id}`,
+ {
+   headers: {
+     'Authorization': `Bearer ${token}`
+   }
+ });
       if (!res.ok) throw new Error('Failed to load event details');
       const { data } = await res.json();
       setEventInfo({ name: data.name, location: data.location });

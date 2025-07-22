@@ -38,7 +38,13 @@ export default function Event() {
   useEffect(() => {
     async function fetchEvent() {
       try {
-        const res = await fetch(`${API_ROUTE}/api/v1/event/eventid/${eventId}`);
+        const token = localStorage.getItem('token');
+        const res = await fetch(`${API_ROUTE}/api/v1/event/eventid/${eventId}`,
+ {
+   headers: {
+     'Authorization': `Bearer ${token}`
+   }
+ });
         if (!res.ok) throw new Error('Event not found');
         const { data } = await res.json();
         setEvent(data);
@@ -59,9 +65,10 @@ export default function Event() {
   const handleStatusChange = async e => {
     const newStatus = e.target.value;
     try {
+      const token = localStorage.getItem('token');
       const res = await fetch(`${API_ROUTE}/api/v1/event/userid/${eventId}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json',  'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ status: newStatus }),
       });
       if (!res.ok) throw new Error('Failed to update status');
@@ -155,8 +162,12 @@ export default function Event() {
               onClick={async () => {
                 if (!window.confirm('Delete this event?')) return;
                 try {
+                  const token = localStorage.getItem('token');
                   const res = await fetch(`${API_ROUTE}/api/v1/event/userid/${eventId}`, {
                     method: 'DELETE',
+                      headers: {
+     'Authorization': `Bearer ${token}`
+   }
                   });
                   if (!res.ok) throw new Error('Failed to delete');
                   showSnackbar('Event deleted');

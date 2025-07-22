@@ -36,18 +36,33 @@ export default function Report() {
   useEffect(() => {
     if (!eventId) return;
     setLoading(true);
-
-    const sumP = fetch(`${API_ROUTE}/api/v1/event/report/event/${eventId}`)
+const token = localStorage.getItem('token');
+    const sumP = fetch(`${API_ROUTE}/api/v1/event/report/event/${eventId}`,
+ {
+   headers: {
+     'Authorization': `Bearer ${token}`
+   }
+ })
       .then(r => r.json()).then(j => {
         if (!j.success) throw new Error(j.message || 'Failed loading summary');
         return j.data;
       });
 
     const subsP = fetch(
-      `${API_ROUTE}/api/v1/event/participantSearch?eventId=${eventId}&page=1&limit=10000`
+      `${API_ROUTE}/api/v1/event/participantSearch?eventId=${eventId}&page=1&limit=10000`,
+ {
+   headers: {
+     'Authorization': `Bearer ${token}`
+   }
+ }
     ).then(r => r.json()).then(j => j.results || []);
 
-    const ticketsP = fetch(`${API_ROUTE}/api/v1/event/tickets/event/${eventId}`)
+    const ticketsP = fetch(`${API_ROUTE}/api/v1/event/tickets/event/${eventId}`,
+ {
+   headers: {
+     'Authorization': `Bearer ${token}`
+   }
+ })
       .then(r => r.json()).then(j => {
         if (!j.success) throw new Error(j.message || 'Failed loading tickets');
         return j.data;

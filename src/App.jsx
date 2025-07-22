@@ -38,6 +38,10 @@ import PublicEventsDashboard from "./components/PublicEvents/PublicEventsDashboa
 import AllPublicEvents from "./components/PublicEvents/AllPublicEvents.jsx";
 import EventDetails from "./components/PublicEvents/EventDetails.jsx";
 import RegistrationForm from "./components/PublicEvents/RegistrationForm.jsx";
+import TicketSelection from "./components/TicketPurchase/TicketSelection.jsx";
+import TicketForms from "./components/TicketPurchase/TicketForms.jsx";
+import TicketCheckout from "./components/TicketPurchase/TicketCheckout.jsx";
+import TicketSuccess from "./components/TicketPurchase/TicketSuccess.jsx";
 
 
 function App() {
@@ -54,6 +58,10 @@ function App() {
           element={<QRViewer />}  
         />
         <Route path="/public-events" element={<PublicEventsDashboard />} />
+        <Route path="/event/:eventId/tickets" element={<TicketSelection />} />
+<Route path="/event/:eventId/tickets/forms" element={<TicketForms />} />
+<Route path="/event/:eventId/tickets/checkout" element={<TicketCheckout />} />
+<Route path="/event/:eventId/tickets/success/:orderId" element={<TicketSuccess />} />
         <Route path="/event/:eventId/details" element={<EventDetails />} />
         <Route path="/event/:eventId/register" element={<RegistrationForm />} />
         <Route path="/events" element={<AllPublicEvents />} />

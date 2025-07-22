@@ -48,9 +48,15 @@ export default function EditEvent() {
       : '';
 
   useEffect(() => {
+    const token = localStorage.getItem('token');
     async function load() {
       try {
-        const res = await fetch(`${API_ROUTE}/api/v1/event/eventid/${eventId}`);
+        const res = await fetch(`${API_ROUTE}/api/v1/event/eventid/${eventId}`,
+ {
+   headers: {
+     'Authorization': `Bearer ${token}`
+   }
+ });
         if (!res.ok) throw new Error('Event not found');
         const { data } = await res.json();
 
@@ -133,12 +139,13 @@ export default function EditEvent() {
         start_time:    timeString(form.start_time),
         end_time:      timeString(form.end_time),
       };
+      const token = localStorage.getItem('token');
 
       const res = await fetch(
         `${API_ROUTE}/api/v1/event/userid/${eventId}`,
         {
           method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
           body: JSON.stringify(payload)
         }
       );

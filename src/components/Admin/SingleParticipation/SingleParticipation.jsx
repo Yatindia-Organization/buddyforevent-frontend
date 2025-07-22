@@ -34,10 +34,16 @@ export default function SingleParticipation() {
   useEffect(() => {
     if (!eventId) return
 
-    Promise.all([
-      fetch(`${API_ROUTE}/api/v1/event/registration-form/eventId/${eventId}`).then(r => r.json()),
-      fetch(`${API_ROUTE}/api/v1/event/ticket-tiers/${eventId}`).then(r => r.json()),
-    ])
+   const token = localStorage.getItem('token');
+
+Promise.all([
+ fetch(`${API_ROUTE}/api/v1/event/registration-form/eventId/${eventId}`, {
+   headers: { 'Authorization': `Bearer ${token}` }
+ }).then(r => r.json()),
+ fetch(`${API_ROUTE}/api/v1/event/ticket-tiers/${eventId}`, {
+   headers: { 'Authorization': `Bearer ${token}` }
+ }).then(r => r.json()),
+])
       .then(([formsRes, tiersRes]) => {
         const forms = Array.isArray(formsRes) ? formsRes : formsRes.data?.forms || []
         if (forms.length) {
@@ -71,9 +77,10 @@ export default function SingleParticipation() {
     const responses = schema.fields.map(f => ({ fieldId: f.id, value: values[f.id] }))
     const visitorCount = Number(values.visitorCount) || 0
 
+    const token = localStorage.getItem('token');
     fetch(`${API_ROUTE}/api/v1/event/form-submission`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json',  'Authorization': `Bearer ${token}` },
       body: JSON.stringify({
         eventId,
         formId: schema._id,

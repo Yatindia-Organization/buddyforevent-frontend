@@ -60,9 +60,10 @@ export default function CreatePolls() {
         options: nonEmpty,
         userId
       };
+      const token = localStorage.getItem('token');
       const res = await fetch(`${API_ROUTE}/api/v1/event/poll`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify(payload)
       });
       if (!res.ok) throw new Error(await res.text());

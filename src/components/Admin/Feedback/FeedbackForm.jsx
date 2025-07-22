@@ -22,9 +22,11 @@ const FeedbackForm = () => {
   const submitFeedback = async () => {
     setLoading(true);
     try {
+      const token = localStorage.getItem('token');
       const res = await fetch(`${API_ROUTE}/api/v1/event/feedback`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}`
+ },
         body: JSON.stringify({ event: eventId, user, rating, comment }),
       });
 

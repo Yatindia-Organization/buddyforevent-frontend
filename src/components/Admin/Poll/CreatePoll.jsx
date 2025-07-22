@@ -36,10 +36,13 @@ export default function Polls() {
 
     async function loadPolls() {
       try {
+        const token = localStorage.getItem('token');
         setLoading(true);
         const res = await fetch(
           `${API_ROUTE}/api/v1/event/poll/event/${eventId}`,
-          { signal: controller.signal }
+          { signal: controller.signal ,  headers: {
+     'Authorization': `Bearer ${token}`
+   }}
         );
         const json = await res.json();
         if (!json.success) throw new Error(json.message || 'Failed to load polls');
@@ -103,10 +106,11 @@ export default function Polls() {
     }
 
     try {
+      const token = localStorage.getItem('token');
       setLoading(true);
       const res = await fetch(`${API_ROUTE}/api/v1/event/poll`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({
           event: eventId,
           question: newPoll.question.trim(),
@@ -114,6 +118,7 @@ export default function Polls() {
           userId,
         }),
       });
+      
       if (!res.ok) {
         const text = await res.text();
         throw new Error(text || 'Failed to create poll');
@@ -122,10 +127,15 @@ export default function Polls() {
       showSnackbar('Poll created!', 'success');
       setModalOpen(false);
       setNewPoll({ question: '', options: ['', ''] });
-
+      
       // Refresh polls
       const freshRes = await fetch(
-        `${API_ROUTE}/api/v1/event/poll/event/${eventId}`
+        `${API_ROUTE}/api/v1/event/poll/event/${eventId}`,
+ {
+   headers: {
+     'Authorization': `Bearer ${token}`
+   }
+ }
       );
       const freshJson = await freshRes.json();
       if (freshJson.success) {

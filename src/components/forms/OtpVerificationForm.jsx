@@ -23,9 +23,10 @@ export default function OtpVerificationForm() {
         }
 
         try {
+            const token = localStorage.getItem('token');
             const res = await fetch('/api/verify-reset-otp', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                 body: JSON.stringify({ otp: enteredOtp }),
             });
             const data = await res.json();

@@ -80,41 +80,48 @@ export default function RegistrationForm() {
     calculateProgress();
   }, [formData, formFields]);
 
-  const fetchEventAndForm = async () => {
-    try {
-      // Fetch event details - FIXED: Use the correct endpoint
-      const eventResponse = await fetch(`${API_ROUTE}/api/v1/event/eventid/${eventId}`);
-      if (!eventResponse.ok) throw new Error('Failed to fetch event');
-      
-      const eventData = await eventResponse.json();
-      setEvent(eventData.data); // FIXED: Direct access to data
+ const fetchEventAndForm = async () => {
+  try {
+    const token = localStorage.getItem('token');
+    
+    // Fetch event details first
+    const eventResponse = await fetch(`${API_ROUTE}/api/v1/event/eventid/${eventId}`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!eventResponse.ok) throw new Error('Event not found');
+    const eventData = await eventResponse.json();
+    setEvent(eventData.data);
 
-      // Fetch registration form
-      const formResponse = await fetch(`${API_ROUTE}/api/v1/event/registration-form/eventId/${eventId}`);
-      if (!formResponse.ok) throw new Error('Failed to fetch registration form');
-      
+    // Fetch registration form by eventId (using correct route)
+    const formResponse = await fetch(`${API_ROUTE}/api/v1/event/registration-form/eventId/${eventId}`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    
+    if (formResponse.ok) {
       const formData = await formResponse.json();
+      console.log('Form data received:', formData); // Debug log
+      
       if (formData && formData.length > 0) {
-        setFormFields(formData[0].fields || []);
-        
-        // Initialize form data with default values - FIXED: Use correct field types
-        const initialData = {};
-        formData[0].fields.forEach(field => {
-          if (field.type === 'Checkbox') { // FIXED: Capital C
-            initialData[field.id] = [];
-          } else {
-            initialData[field.id] = '';
-          }
-        });
-        setFormData(initialData);
+        setRegistrationForm(formData[0]); // Use first form
+        console.log('Registration form set:', formData[0]); // Debug log
+      } else {
+        console.log('No registration form found for this event');
+        setRegistrationForm(null);
       }
-    } catch (error) {
-      console.error('Error fetching data:', error);
-      showSnackbar(error.message, 'error');
-    } finally {
-      setLoading(false);
+    } else {
+      console.log('Failed to fetch registration form, status:', formResponse.status);
+      setRegistrationForm(null);
     }
-  };
+
+    // Initialize form data structure
+    initializeFormData();
+  } catch (error) {
+    console.error('Error fetching data:', error);
+    setRegistrationForm(null);
+  } finally {
+    setLoading(false);
+  }
+};
 
   const calculateProgress = () => {
     if (formFields.length === 0) return;
@@ -278,11 +285,11 @@ export default function RegistrationForm() {
         responses: responses,
         participant: participantName
       };
-
+const token = localStorage.getItem('token');
       const response = await fetch(`${API_ROUTE}/api/v1/form/submit`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json', 'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify(submissionData)
       });

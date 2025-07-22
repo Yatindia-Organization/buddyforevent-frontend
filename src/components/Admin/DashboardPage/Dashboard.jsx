@@ -34,10 +34,16 @@ const Dashboard = () => {
   const [events, setEvents] = useState([]);
 
   useEffect(() => {
+    const token = localStorage.getItem('token');
     if (!userId) return;
     (async () => {
       try {
-        const res = await fetch(`${API_ROUTE}/api/v1/event/userid/${userId}`);
+        const res = await fetch(`${API_ROUTE}/api/v1/event/userid/${userId}`,
+ {
+   headers: {
+     'Authorization': `Bearer ${token}`
+   }
+ });
         const json = await res.json();
         setEvents(json?.data || []);
       } catch (err) {

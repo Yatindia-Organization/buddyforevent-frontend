@@ -16,9 +16,10 @@ export default function ForgotPassword() {
         }
 
         try {
+            const token = localStorage.getItem('token');
             const res = await fetch('/api/send-reset-otp', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                 body: JSON.stringify({ email }),
             });
             const data = await res.json();

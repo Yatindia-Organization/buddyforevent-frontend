@@ -79,9 +79,10 @@ export default function CreateAccountForm() {
     if (!validate()) return;
     setLoading(true);
     try {
+      const token = localStorage.getItem('token');
       const res = await fetch(`${API_ROUTE}/api/v1/auth/sign-up`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", 'Authorization': `Bearer ${token}` },
         body: JSON.stringify(form),
       });
       const data = await res.json();

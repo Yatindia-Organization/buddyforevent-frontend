@@ -241,11 +241,12 @@ export default function PaymentManagement() {
   const handleCreatePayment = async () => {
     setLoading(true);
     try {
-      // Replace with actual API call
+      const token = localStorage.getItem('token');
       const response = await fetch(`${API_ROUTE}/api/v1/payments/single`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify(paymentForm),
       });
@@ -268,10 +269,12 @@ export default function PaymentManagement() {
   const handleUpdatePaymentStatus = async (paymentId, newStatus) => {
     setLoading(true);
     try {
+      const token = localStorage.getItem('token');
       const response = await fetch(`${API_ROUTE}/api/v1/payments/${paymentId}/status`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({ status: newStatus }),
       });
@@ -294,7 +297,13 @@ export default function PaymentManagement() {
   const loadPayments = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`${API_ROUTE}/api/v1/payments/event/${eventId}?page=${page}&limit=${limit}`);
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_ROUTE}/api/v1/payments/event/${eventId}?page=${page}&limit=${limit}`,
+ {
+   headers: {
+     'Authorization': `Bearer ${token}`
+   }
+ });
       if (response.ok) {
         const data = await response.json();
         setPayments(data.payments);
@@ -308,7 +317,13 @@ export default function PaymentManagement() {
 
   const loadAnalytics = async () => {
     try {
-      const response = await fetch(`${API_ROUTE}/api/v1/payments/analytics/${eventId}`);
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_ROUTE}/api/v1/payments/analytics/${eventId}`,
+ {
+   headers: {
+     'Authorization': `Bearer ${token}`
+   }
+ });
       if (response.ok) {
         const data = await response.json();
         setAnalytics(data);

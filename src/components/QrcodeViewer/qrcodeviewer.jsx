@@ -15,8 +15,13 @@ export default function QRDisplay() {
       setLoading(false);
       return;
     }
-
-    fetch(`${API_ROUTE}/api/v1/event/form-submission/${submissionId}`)
+const token = localStorage.getItem('token');
+    fetch(`${API_ROUTE}/api/v1/event/form-submission/${submissionId}`,
+ {
+   headers: {
+     'Authorization': `Bearer ${token}`
+   }
+ })
       .then(res => {
         if (!res.ok) throw new Error(`Fetch failed: ${res.status}`);
         return res.json();

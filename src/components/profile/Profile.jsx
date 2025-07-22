@@ -51,6 +51,7 @@ export default function Profile() {
     if (!payload.password) delete payload.password;
 
     try {
+      const token = localStorage.getItem('token');
       const res = await fetch(`${API_ROUTE}/api/v1/users/${userId}`, {
         method: 'PATCH',
         headers: {

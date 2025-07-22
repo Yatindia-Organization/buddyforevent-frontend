@@ -17,7 +17,13 @@ const FeedbackAdmin = () => {
 
   const fetchFeedbacks = async () => {
     try {
-      const res = await fetch(`${API_ROUTE}/api/v1/event/feedback/event/${eventId}`);
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API_ROUTE}/api/v1/event/feedback/event/${eventId}`,
+ {
+   headers: {
+     'Authorization': `Bearer ${token}`
+   }
+ });
       if (!res.ok) throw new Error('Failed to fetch feedbacks');
       const { data } = await res.json();
       setFeedbacks(data);

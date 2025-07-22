@@ -166,11 +166,12 @@ export default function CreateEvent() {
         start_time:   fmtTime(formData.start_time),
         end_time:     fmtTime(formData.end_time),
       };
-
+      const token = localStorage.getItem('token');
       // call API
       const res = await fetch(`${API_ROUTE}/api/v1/event`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json',
+   'Authorization': `Bearer ${token}` },
         body: JSON.stringify(payload),
       });
       if (!res.ok) throw new Error(await res.text());

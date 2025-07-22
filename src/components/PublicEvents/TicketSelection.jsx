@@ -86,9 +86,15 @@ export default function TicketSelection() {
   }, [ticketQuantities, tickets]);
 
   const fetchEventAndTickets = async () => {
+    const token = localStorage.getItem('token');
     try {
-      // FIXED: Use correct endpoint for single event
-      const eventResponse = await fetch(`${API_ROUTE}/api/v1/event/eventid/${eventId}`);
+     
+      const eventResponse = await fetch(`${API_ROUTE}/api/v1/event/eventid/${eventId}`,
+ {
+   headers: {
+     'Authorization': `Bearer ${token}`
+   }
+ });
       if (!eventResponse.ok) throw new Error('Failed to fetch event');
       
       const eventData = await eventResponse.json();
@@ -207,11 +213,11 @@ export default function TicketSelection() {
           paymentMethod: 'cash', // You can make this dynamic
           notes: `Single ticket purchase for ${selectedTicket.tierName}`
         };
-
+        const token = localStorage.getItem('token');
         paymentResponse = await fetch(`${API_ROUTE}/api/v1/payments/single`, {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json',
+            'Content-Type': 'application/json', 'Authorization': `Bearer ${token}`
           },
           body: JSON.stringify(paymentData)
         });
@@ -242,11 +248,11 @@ export default function TicketSelection() {
           paymentMethod: 'cash',
           notes: `Bulk purchase for ${totalTickets} tickets`
         };
-
+const token = localStorage.getItem('token');
         paymentResponse = await fetch(`${API_ROUTE}/api/v1/payments/bulk`, {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json',
+            'Content-Type': 'application/json', 'Authorization': `Bearer ${token}`
           },
           body: JSON.stringify(bulkPaymentData)
         });

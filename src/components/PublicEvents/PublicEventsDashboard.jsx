@@ -49,7 +49,13 @@ export default function PublicEventsDashboard() {
 
   const fetchPublicEvents = async () => {
     try {
-      const response = await fetch(`${API_ROUTE}/api/v1/event/public`);
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_ROUTE}/api/v1/event/public`,
+ {
+   headers: {
+     'Authorization': `Bearer ${token}`
+   }
+ });
       if (!response.ok) throw new Error('Failed to fetch events');
       
       const data = await response.json();

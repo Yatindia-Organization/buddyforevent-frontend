@@ -39,7 +39,14 @@ export default function AddParticipants() {
       setFormExists(false);
       return;
     }
-    fetch(`${API_ROUTE}/api/v1/event/registration-form/eventId/${eventId}`)
+
+    const token = localStorage.getItem('token');
+
+    fetch(`${API_ROUTE}/api/v1/event/registration-form/eventId/${eventId}`, {
+   headers: {
+     'Authorization': `Bearer ${token}`
+   }
+ })
       .then((res) => {
         if (res.status === 404) {
           setFormExists(false);
@@ -63,9 +70,15 @@ export default function AddParticipants() {
   };
 
   const handleDownloadTemplate = async () => {
+    const token = localStorage.getItem('token');
     try {
       const res = await fetch(
-        `${API_ROUTE}/api/v1/event/bulkRegistration/export-template/${eventId}`
+        `${API_ROUTE}/api/v1/event/bulkRegistration/export-template/${eventId}`,
+         {
+   headers: {
+     'Authorization': `Bearer ${token}`
+   }
+ }
       );
       if (!res.ok) throw new Error("Failed to download template");
       const blob = await res.blob();
@@ -102,9 +115,12 @@ export default function AddParticipants() {
     formData.append("file", selectedFile);
 
     try {
+      const token = localStorage.getItem('token');
       const res = await fetch(
         `${API_ROUTE}/api/v1/event/bulkRegistration/import-template/${eventId}`,
-        { method: "POST", body: formData }
+        { method: "POST", body: formData, headers: {
+     'Authorization': `Bearer ${token}`
+   } }
       );
       const result = await res.json();
       if (!res.ok)

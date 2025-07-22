@@ -70,9 +70,15 @@ export default function ParticipantLookup() {
 
     setLoading(true);
     try {
+      const token = localStorage.getItem('token');
       const qs = new URLSearchParams({ q: searchTerm, eventId }).toString();
       const res = await fetch(
-        `${API_ROUTE}/api/v1/event/participantSearch/findParticipants?${qs}`
+        `${API_ROUTE}/api/v1/event/participantSearch/findParticipants?${qs}`,
+ {
+   headers: {
+     'Authorization': `Bearer ${token}`
+   }
+ }
       );
       const json = await res.json();
       
@@ -98,9 +104,10 @@ export default function ParticipantLookup() {
     // Send OTP
     setOtpLoading(true);
     try {
+      const token = localStorage.getItem('token');
       const res = await fetch(`${API_ROUTE}/api/v1/event/participantSearch/sendOTP`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({
           participantId: participant.id,
           eventId: eventId
@@ -131,9 +138,10 @@ export default function ParticipantLookup() {
 
     setOtpLoading(true);
     try {
+      const token = localStorage.getItem('token');
       const res = await fetch(`${API_ROUTE}/api/v1/event/participantSearch/verifyOTP`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({
           participantId: selectedParticipant.id,
           otp: otp,

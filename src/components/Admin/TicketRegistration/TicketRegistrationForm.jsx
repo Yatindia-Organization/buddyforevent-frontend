@@ -47,11 +47,15 @@ export default function TicketRegistrationForm({ eventName }) {
   // fetch existing tiers
   useEffect(() => {
     if (!eventId) return;
-    fetch(`${API_ROUTE}/api/v1/event/ticket-tiers/${eventId}`)
-      .then((r) => {
-        if (!r.ok) throw new Error("Failed to fetch tiers");
-        return r.json();
-      })
+   const token = localStorage.getItem('token');
+
+fetch(`${API_ROUTE}/api/v1/event/ticket-tiers/${eventId}`, {
+ headers: { 'Authorization': `Bearer ${token}` }
+})
+ .then((r) => {
+   if (!r.ok) throw new Error("Failed to fetch tiers");
+   return r.json();
+ })
       .then((json) => {
         const existing = json.data.ticket_tiers;
         setTiers(
@@ -73,7 +77,13 @@ export default function TicketRegistrationForm({ eventName }) {
     setAnalyticsError(null);
     
     try {
-      const response = await fetch(`${API_ROUTE}/api/v1/event/tickets/events/${eventId}/analytics`);
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_ROUTE}/api/v1/event/tickets/events/${eventId}/analytics`,
+ {
+   headers: {
+     'Authorization': `Bearer ${token}`
+   }
+ });
       if (!response.ok) {
         throw new Error('Failed to fetch analytics');
       }
@@ -129,11 +139,12 @@ export default function TicketRegistrationForm({ eventName }) {
       perks: t.perks.split(",").map((p) => p.trim()).filter(Boolean),
     }));
     try {
+      const token = localStorage.getItem('token');
       const res = await fetch(
         `${API_ROUTE}/api/v1/event/ticket-tiers/${eventId}`,
         {
           method: "PATCH",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", 'Authorization': `Bearer ${token}` },
           body: JSON.stringify({ ticket_tiers: payload }),
         }
       );

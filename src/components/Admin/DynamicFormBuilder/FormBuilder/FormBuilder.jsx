@@ -37,11 +37,17 @@ export default function FormBuilder() {
 
   // Check if event is public
   useEffect(() => {
+    const token = localStorage.getItem('token');
     if (!eventId) { setLoading(false); return; }
 
     (async () => {
       try {
-        const res = await fetch(`${API_ROUTE}/api/v1/event/eventid/${eventId}`);
+        const res = await fetch(`${API_ROUTE}/api/v1/event/eventid/${eventId}`,
+ {
+   headers: {
+     'Authorization': `Bearer ${token}`
+   }
+ });
         if (res.ok) {
           const eventData = await res.json();
           setIsPublicEvent(eventData.data.public_event);
@@ -54,11 +60,17 @@ export default function FormBuilder() {
 
   // fetch existing form
   useEffect(() => {
+    const token = localStorage.getItem('token');
     if (!eventId) { setLoading(false); return; }
 
     (async () => {
       try {
-        const res = await fetch(`${API_ROUTE}/api/v1/event/registration-form/eventId/${eventId}`);
+        const res = await fetch(`${API_ROUTE}/api/v1/event/registration-form/eventId/${eventId}`,
+ {
+   headers: {
+     'Authorization': `Bearer ${token}`
+   }
+ });
         if (res.status === 404) {
           setFormExists(false);
           // If public event and no existing form, add mandatory fields
@@ -132,9 +144,11 @@ export default function FormBuilder() {
     }
     setFinalSchema(fields);
     try {
+      const token = localStorage.getItem('token');
       const res = await fetch(`${API_ROUTE}/api/v1/event/registration-form`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}`
+ },
         body: JSON.stringify({ eventId, fields })
       });
       if (!res.ok) {

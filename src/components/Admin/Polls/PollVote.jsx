@@ -26,7 +26,13 @@ export default function PollVote() {
   useEffect(() => {
     async function load() {
       try {
-        const res = await fetch(`${API_ROUTE}/api/v1/event/poll/event/${eventId}`);
+        const token = localStorage.getItem('token');
+        const res = await fetch(`${API_ROUTE}/api/v1/event/poll/event/${eventId}`,
+ {
+   headers: {
+     'Authorization': `Bearer ${token}`
+   }
+ });
         if (!res.ok) throw new Error('Failed to load polls');
         const { data } = await res.json();
         setPolls(data);
@@ -46,9 +52,10 @@ export default function PollVote() {
     }
     setSubmitting(s => ({ ...s, [pollId]: true }));
     try {
+      const token = localStorage.getItem('token');
       const res = await fetch(`${API_ROUTE}/api/v1/event/poll/${pollId}/vote`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ optionIndex }),
       });
       if (!res.ok) throw new Error(await res.text());

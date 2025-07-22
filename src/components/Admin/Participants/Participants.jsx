@@ -33,12 +33,18 @@ export default function Participants() {
 
   // 1) Check for form existence & load schema
   useEffect(() => {
+    const token = localStorage.getItem('token');
     if (!eventId) {
       setFormExists(false)
       return
     }
 
-    fetch(`${API_ROUTE}/api/v1/event/registration-form/eventId/${eventId}`)
+    fetch(`${API_ROUTE}/api/v1/event/registration-form/eventId/${eventId}`,
+ {
+   headers: {
+     'Authorization': `Bearer ${token}`
+   }
+ })
       .then(res => {
         if (res.status === 404) {
           setFormExists(false)
@@ -63,6 +69,7 @@ export default function Participants() {
 
   // 2) Load participants when form exists
   useEffect(() => {
+    const token = localStorage.getItem('token');
     if (!eventId || !formExists) return
 
     const params = new URLSearchParams({
@@ -74,7 +81,12 @@ export default function Participants() {
       params.set('q', searchText.trim())
     }
 
-    fetch(`${API_ROUTE}/api/v1/event/participantSearch?${params}`)
+    fetch(`${API_ROUTE}/api/v1/event/participantSearch?${params}`,
+ {
+   headers: {
+     'Authorization': `Bearer ${token}`
+   }
+ })
       .then(r => r.json())
       .then(data => {
         setRows(data.results)

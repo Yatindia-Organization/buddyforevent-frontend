@@ -10,6 +10,7 @@ import './styles/theme.css';
 import { ThemeProvider } from './contexts/ThemeContext.jsx';
 import { GlobalProvider } from './contexts/globalContext.jsx';
 
+
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <ThemeProvider>
