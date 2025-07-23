@@ -265,7 +265,7 @@ export default function EventDetails() {
       <Box 
         sx={{ 
           position: 'relative',
-          height: '70vh',
+          height: '50vh',
           backgroundImage: `url(${event.cover_image})`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',

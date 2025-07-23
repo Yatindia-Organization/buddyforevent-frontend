@@ -42,65 +42,91 @@ import TicketSelection from "./components/TicketPurchase/TicketSelection.jsx";
 import TicketForms from "./components/TicketPurchase/TicketForms.jsx";
 import TicketCheckout from "./components/TicketPurchase/TicketCheckout.jsx";
 import TicketSuccess from "./components/TicketPurchase/TicketSuccess.jsx";
-
+import SuperAdminDashboard from "./components/SuperAdmin/SuperAdminDashboard.jsx";
+import UserManagement from "./components/SuperAdmin/UserManagement.jsx";
+import PlanManagement from "./components/SuperAdmin/PlanManagement.jsx";
+import PromocodeManagement from "./components/SuperAdmin/PromocodeManagement.jsx";
+import SystemAnalytics from "./components/SuperAdmin/SystemAnalytics.jsx";
+import PlanCheckout from "./components/Plans/PlanCheckout.jsx";
+import PlanSuccess from "./components/Plans/PlanSuccess.jsx";
+import PlanSelection from "./components/Plans/PlanSelection.jsx";
+import EventPromocodes from "./components/Plans/EventPromocodes.jsx";
 
 function App() {
   const context = useGlobalInfo();
-
   const isLoggedIn = context.loginFlow;
+  const userType = context.userType; // Get user type from context
 
   return (
     <Router>
       <Routes>
+        {/* Public Routes - Always Available */}
         <Route path="/participant-lookup/" element={<ParticipantLookup />} />
-        <Route
-          path="/qr/:submissionId"
-          element={<QRViewer />}  
-        />
+        <Route path="/qr/:submissionId" element={<QRViewer />} />
         <Route path="/public-events" element={<PublicEventsDashboard />} />
         <Route path="/event/:eventId/tickets" element={<TicketSelection />} />
-<Route path="/event/:eventId/tickets/forms" element={<TicketForms />} />
-<Route path="/event/:eventId/tickets/checkout" element={<TicketCheckout />} />
-<Route path="/event/:eventId/tickets/success/:orderId" element={<TicketSuccess />} />
+        <Route path="/event/:eventId/tickets/forms" element={<TicketForms />} />
+        <Route path="/event/:eventId/tickets/checkout" element={<TicketCheckout />} />
+        <Route path="/event/:eventId/tickets/success/:orderId" element={<TicketSuccess />} />
         <Route path="/event/:eventId/details" element={<EventDetails />} />
         <Route path="/event/:eventId/register" element={<RegistrationForm />} />
         <Route path="/events" element={<AllPublicEvents />} />
         <Route path="/event/:eventId/polls" element={<PollVote />} />
-         <Route path="/live-count/:id" element={<EventLiveCount />} />
-         <Route path="/feedback-entry/:eventId" element={<FeedbackForm />} />
-         <Route path="/event" element={<FeedbackForm />} />
+        <Route path="/live-count/:id" element={<EventLiveCount />} />
+        <Route path="/feedback-entry/:eventId" element={<FeedbackForm />} />
+
         {isLoggedIn ? (
-          // Protected Routes (after login)
-          <Route path="/" element={<Main />}>
-            <Route index element={<Navigate to="dashboard" replace />} />
-            <Route path="dashboard" element={<Dashboard />} />
-            <Route path="/event-dashboard" element={<EventDashboard />} >
-              <Route index element={<Navigate to="event/:id" replace />} />
-              <Route path="event/:id" element={<Event />} />
-              <Route path="participant-registration" element={<ParticipantRegistration />} />
-              <Route path="bulk-ticket" element={<AddParticipants />} />
-              <Route path="single-registration" element={<SingleParticipation />} />
-              <Route path="view-participants" element={<Participants />} />
-              <Route path="payment-history" element={<PaymentHistory />} />
-              <Route path="email-message" element={<Email />} />
-              <Route path="reports" element={<Report />} />
-              <Route path="eventedit/:event" element={<EditEvent />} />
-              <Route path="polls/createPoll" element={<CreatePolls />} />
-              <Route path="feedbackView" element={<FeedbackAdmin />} />
-             
-              <Route path="create-poll" element={<CreatePoll />} />
+          // Check user type and render appropriate routes
+          userType === 'super-admin' ? (
+            // SUPER ADMIN ROUTES ONLY
+            <>
+              <Route path="/" element={<Navigate to="/super-admin/dashboard" replace />} />
+              <Route path="/super-admin/dashboard" element={<SuperAdminDashboard />} />
+              <Route path="/super-admin/users" element={<UserManagement />} />
+              <Route path="/super-admin/plans" element={<PlanManagement />} />
+              <Route path="/super-admin/promocodes" element={<PromocodeManagement />} />
+              <Route path="/super-admin/analytics" element={<SystemAnalytics />} />
+              {/* Redirect any other route to super admin dashboard */}
+              <Route path="*" element={<Navigate to="/super-admin/dashboard" replace />} />
+            </>
+          ) : (
+            // REGULAR ADMIN/USER ROUTES
+            <Route path="/" element={<Main />}>
+              <Route index element={<Navigate to="dashboard" replace />} />
+              <Route path="dashboard" element={<Dashboard />} />
+              <Route path="/event-dashboard" element={<EventDashboard />}>
+                <Route index element={<Navigate to="event/:id" replace />} />
+                <Route path="event/:id" element={<Event />} />
+                <Route path="participant-registration" element={<ParticipantRegistration />} />
+                <Route path="bulk-ticket" element={<AddParticipants />} />
+                <Route path="single-registration" element={<SingleParticipation />} />
+                <Route path="view-participants" element={<Participants />} />
+                <Route path="payment-history" element={<PaymentHistory />} />
+                <Route path="email-message" element={<Email />} />
+                <Route path="reports" element={<Report />} />
+                <Route path="eventedit/:event" element={<EditEvent />} />
+                <Route path="polls/createPoll" element={<CreatePolls />} />
+                <Route path="feedbackView" element={<FeedbackAdmin />} />
+                <Route path="create-poll" element={<CreatePoll />} />
+              </Route>
+              <Route path="/create-event" element={<CreateEvent />} />
+              <Route path="/add-participants" element={<AddParticipants />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/reports" element={<Report />} />
+              <Route path="/settings" element={<Settings />} />
+              
+              {/* Admin Plan Purchase Routes */}
+              <Route path="/plans" element={<PlanSelection />} />
+              <Route path="/plans/checkout" element={<PlanCheckout />} />
+              <Route path="/plans/success" element={<PlanSuccess />} />
+              
+              {/* Admin Event Promocodes */}
+              <Route path="/event-promocodes" element={<EventPromocodes />} />
             </Route>
-
-            <Route path="/create-event" element={<CreateEvent />} />
-            <Route path="/add-participants" element={<AddParticipants />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/reports" element={<Report />} />
-            <Route path="/settings" element={<Settings />} />
-
-          </Route>
+          )
         ) : (
-          // Public Routes (before login)
-          <Route path="/" element={<LandingPage />} >
+          // PUBLIC ROUTES (before login)
+          <Route path="/" element={<LandingPage />}>
             <Route index element={<Navigate to="login" replace />} />
             <Route path="/login" element={<Login />} />
             <Route path="/create-account" element={<CreateAccountForm />} />
@@ -108,14 +134,13 @@ function App() {
             <Route path="/otp-verification" element={<OtpVerification />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="*" element={<Navigate to="/login" replace />} />
-
           </Route>
-
         )}
       </Routes>
     </Router>
   );
 }
+
 
 
 export default App;
