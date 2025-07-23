@@ -84,14 +84,24 @@ export default function TicketForms() {
     calculateProgress();
   }, [formData, registrationForm]);
 
+  // Initialize form data when selectedTickets changes
+  useEffect(() => {
+    if (selectedTickets.length > 0) {
+      initializeFormData();
+    }
+  }, [selectedTickets]);
+
   const fetchEventAndForm = async () => {
     try {
       const token = localStorage.getItem('token');
       
       // Fetch event details first
       const eventResponse = await fetch(`${API_ROUTE}/api/v1/event/eventid/${eventId}`, {
-        headers: { 'Authorization': `Bearer ${token}`, 'Cache-Control': 'no-cache',
-    'Pragma': 'no-cache' }
+        headers: { 
+          'Authorization': `Bearer ${token}`, 
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache' 
+        }
       });
       if (!eventResponse.ok) throw new Error('Event not found');
       const eventData = await eventResponse.json();
@@ -99,7 +109,11 @@ export default function TicketForms() {
 
       // Fetch registration form by eventId
       const formResponse = await fetch(`${API_ROUTE}/api/v1/event/registration-form/eventId/${eventId}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache' 
+        }
       });
       
       if (formResponse.ok) {
@@ -118,8 +132,6 @@ export default function TicketForms() {
         setRegistrationForm(null);
       }
 
-      // Initialize form data structure
-      initializeFormData();
     } catch (error) {
       console.error('Error fetching data:', error);
       setRegistrationForm(null);
@@ -129,6 +141,8 @@ export default function TicketForms() {
   };
 
   const initializeFormData = () => {
+    console.log('Initializing form data with selectedTickets:', selectedTickets);
+    
     const initialData = {};
     const initialExpanded = {};
     let participantIndex = 0;
@@ -149,6 +163,7 @@ export default function TicketForms() {
       }
     });
 
+    console.log('Form data initialized:', initialData);
     setFormData(initialData);
     setExpandedPanels(initialExpanded);
   };
@@ -315,7 +330,8 @@ export default function TicketForms() {
   };
 
   const handleContinue = () => {
-    if (!validateForms()) {
+    // Check if there's a form and validate if needed
+    if (registrationForm && !validateForms()) {
       return;
     }
 
@@ -346,7 +362,7 @@ export default function TicketForms() {
     return selectedTickets.reduce((total, group) => total + group.quantity, 0);
   };
 
-  // Get field icon function (same as your registration form)
+  // Get field icon function
   const getFieldIcon = (type) => {
     switch (type) {
       case 'Email': return <Email sx={{ fontSize: 20, color: 'var(--color-primary)' }} />;
@@ -628,6 +644,17 @@ export default function TicketForms() {
     }
   };
 
+  // Debug logging
+  console.log('Current state:', {
+    registrationForm: !!registrationForm,
+    formFields: registrationForm?.fields?.length,
+    formDataKeys: Object.keys(formData),
+    selectedTicketsLength: selectedTickets.length
+  });
+
+  const hasValidForm = registrationForm && registrationForm.fields && registrationForm.fields.length > 0;
+  const hasFormData = Object.keys(formData).length > 0;
+
   if (loading) {
     return (
       <Box sx={{ 
@@ -686,45 +713,47 @@ export default function TicketForms() {
           </Box>
 
           {/* Progress Bar */}
-          <Card sx={{ 
-            background: 'rgba(255,255,255,0.1)',
-            backdropFilter: 'blur(20px)',
-            border: '1px solid rgba(255,255,255,0.2)',
-            borderRadius: 3
-          }}>
-            <CardContent sx={{ p: 3 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                <Typography variant="body2" sx={{ 
-                  color: 'rgba(255,255,255,0.8)',
-                  fontWeight: 500,
-                  minWidth: 'fit-content'
-                }}>
-                  Form Progress:
-                </Typography>
-                <LinearProgress 
-                  variant="determinate" 
-                  value={completionProgress} 
-                  sx={{ 
-                    flex: 1,
-                    height: 8,
-                    borderRadius: 4,
-                    backgroundColor: 'rgba(255,255,255,0.2)',
-                    '& .MuiLinearProgress-bar': {
-                      background: 'linear-gradient(45deg, #fbbf24, #f472b6)',
-                      borderRadius: 4
-                    }
-                  }}
-                />
-                <Typography variant="body2" sx={{ 
-                  color: 'white',
-                  fontWeight: 600,
-                  minWidth: 'fit-content'
-                }}>
-                  {Math.round(completionProgress)}%
-                </Typography>
-              </Box>
-            </CardContent>
-          </Card>
+          {hasValidForm && (
+            <Card sx={{ 
+              background: 'rgba(255,255,255,0.1)',
+              backdropFilter: 'blur(20px)',
+              border: '1px solid rgba(255,255,255,0.2)',
+              borderRadius: 3
+            }}>
+              <CardContent sx={{ p: 3 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                  <Typography variant="body2" sx={{ 
+                    color: 'rgba(255,255,255,0.8)',
+                    fontWeight: 500,
+                    minWidth: 'fit-content'
+                  }}>
+                    Form Progress:
+                  </Typography>
+                  <LinearProgress 
+                    variant="determinate" 
+                    value={completionProgress} 
+                    sx={{ 
+                      flex: 1,
+                      height: 8,
+                      borderRadius: 4,
+                      backgroundColor: 'rgba(255,255,255,0.2)',
+                      '& .MuiLinearProgress-bar': {
+                        background: 'linear-gradient(45deg, #fbbf24, #f472b6)',
+                        borderRadius: 4
+                      }
+                    }}
+                  />
+                  <Typography variant="body2" sx={{ 
+                    color: 'white',
+                    fontWeight: 600,
+                    minWidth: 'fit-content'
+                  }}>
+                    {Math.round(completionProgress)}%
+                  </Typography>
+                </Box>
+              </CardContent>
+            </Card>
+          )}
         </Container>
       </Box>
 
@@ -738,7 +767,7 @@ export default function TicketForms() {
               </Alert>
             )}
 
-            {!registrationForm ? (
+            {!hasValidForm ? (
               <Alert severity="info" sx={{ borderRadius: 3 }}>
                 <Typography variant="h6" sx={{ mb: 2 }}>
                   No Registration Form Available
@@ -746,6 +775,15 @@ export default function TicketForms() {
                 <Typography variant="body2">
                   This event doesn't have a registration form set up yet. 
                   You can proceed directly to payment.
+                </Typography>
+              </Alert>
+            ) : !hasFormData ? (
+              <Alert severity="warning" sx={{ borderRadius: 3 }}>
+                <Typography variant="h6" sx={{ mb: 2 }}>
+                  Loading Form Data...
+                </Typography>
+                <Typography variant="body2">
+                  Please wait while we prepare the participant forms.
                 </Typography>
               </Alert>
             ) : (
@@ -871,107 +909,109 @@ export default function TicketForms() {
                   Form Progress
                 </Typography>
 
-              <Stack spacing={2} sx={{ mb: 4 }}>
-                 {Object.entries(formData).map(([participantKey, data], index) => {
-                   const isComplete = !registrationForm?.fields || registrationForm.fields.every(field => 
-                     field.type === 'Label' || 
-                     (field.type === 'Checkbox' ? 
-                       (data.responses[field.id] && data.responses[field.id].length > 0) :
-                       data.responses[field.id]
-                     )
-                   );
-                   
-                   return (
-                     <Box key={participantKey} sx={{ 
-                       display: 'flex', 
-                       justifyContent: 'space-between',
-                       alignItems: 'center',
-                       p: 2,
-                       borderRadius: 2,
-                       background: isComplete ? 'var(--color-success-bg)' : 'var(--color-warning-bg)',
-                       border: `1px solid ${isComplete ? 'var(--color-success)' : 'var(--color-warning)'}`
-                     }}>
-                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                         <Person sx={{ fontSize: 18 }} />
-                         <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                           Participant {index + 1}
-                         </Typography>
-                       </Box>
-                       {isComplete ? (
-                         <CheckCircle sx={{ color: 'var(--color-success)', fontSize: 20 }} />
-                       ) : (
-                         <Typography variant="caption" sx={{ 
-                           color: 'var(--color-warning)',
-                           fontWeight: 600
-                         }}>
-                           Incomplete
-                         </Typography>
-                       )}
-                     </Box>
-                   );
-                 })}
-               </Stack>
+                {hasFormData && (
+                  <Stack spacing={2} sx={{ mb: 4 }}>
+                    {Object.entries(formData).map(([participantKey, data], index) => {
+                      const isComplete = !registrationForm?.fields || registrationForm.fields.every(field => 
+                        field.type === 'Label' || 
+                        (field.type === 'Checkbox' ? 
+                          (data.responses[field.id] && data.responses[field.id].length > 0) :
+                          data.responses[field.id]
+                        )
+                      );
+                      
+                      return (
+                        <Box key={participantKey} sx={{ 
+                          display: 'flex', 
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          p: 2,
+                          borderRadius: 2,
+                          background: isComplete ? 'var(--color-success-bg)' : 'var(--color-warning-bg)',
+                          border: `1px solid ${isComplete ? 'var(--color-success)' : 'var(--color-warning)'}`
+                        }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Person sx={{ fontSize: 18 }} />
+                            <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                              Participant {index + 1}
+                            </Typography>
+                          </Box>
+                          {isComplete ? (
+                            <CheckCircle sx={{ color: 'var(--color-success)', fontSize: 20 }} />
+                          ) : (
+                            <Typography variant="caption" sx={{ 
+                              color: 'var(--color-warning)',
+                              fontWeight: 600
+                            }}>
+                              Incomplete
+                            </Typography>
+                          )}
+                        </Box>
+                      );
+                    })}
+                  </Stack>
+                )}
 
-               <Divider sx={{ my: 3 }} />
+                <Divider sx={{ my: 3 }} />
 
-               <Typography variant="body2" sx={{ 
-                 color: 'var(--color-text-secondary)',
-                 mb: 3,
-                 textAlign: 'center'
-               }}>
-                 {registrationForm ? 
-                   'Complete all forms to proceed to payment' : 
-                   'No registration form required for this event'
-                 }
-               </Typography>
+                <Typography variant="body2" sx={{ 
+                  color: 'var(--color-text-secondary)',
+                  mb: 3,
+                  textAlign: 'center'
+                }}>
+                  {hasValidForm ? 
+                    'Complete all forms to proceed to payment' : 
+                    'No registration form required for this event'
+                  }
+                </Typography>
 
-               <Button
-                 variant="contained"
-                 fullWidth
-                 size="large"
-                 onClick={handleContinue}
-                 disabled={registrationForm && Object.keys(validationErrors).length > 0}
-                 sx={{
-                   py: 2,
-                   fontSize: '1.1rem',
-                   fontWeight: 700,
-                   borderRadius: '50px',
-                   background: 'var(--gradient-primary)',
-                   '&:hover': {
-                     background: 'var(--gradient-primary)',
-                     transform: 'translateY(-2px)'
-                   },
-                   '&:disabled': {
-                     background: 'var(--color-text-secondary)',
-                     color: 'white'
-                   }
-                 }}
-               >
-                 Continue to Payment
-               </Button>
+                <Button
+                  variant="contained"
+                  fullWidth
+                  size="large"
+                  onClick={handleContinue}
+                  disabled={hasValidForm && (Object.keys(validationErrors).length > 0 || !hasFormData)}
+                  sx={{
+                    py: 2,
+                    fontSize: '1.1rem',
+                    fontWeight: 700,
+                    borderRadius: '50px',
+                    background: 'var(--gradient-primary)',
+                    '&:hover': {
+                      background: 'var(--gradient-primary)',
+                      transform: 'translateY(-2px)'
+                    },
+                    '&:disabled': {
+                      background: 'var(--color-text-secondary)',
+                      color: 'white'
+                    }
+                  }}
+                >
+                  Continue to Payment
+                </Button>
 
-               {/* Security Notice */}
-               <Box sx={{ 
-                 mt: 3,
-                 p: 2,
-                 borderRadius: 2,
-                 background: 'var(--surface-1)',
-                 border: '1px solid var(--border-color)',
-                 textAlign: 'center'
-               }}>
-                 <Security sx={{ color: 'var(--color-success)', fontSize: 20, mb: 1 }} />
-                 <Typography variant="caption" sx={{ 
-                   color: 'var(--color-text-secondary)',
-                   display: 'block'
-                 }}>
-                   🔒 Your information is secure and encrypted
-                 </Typography>
-               </Box>
-             </CardContent>
-           </Card>
-         </Grid>
-       </Grid>
-     </Container>
-   </Box>
- );
+                {/* Security Notice */}
+                <Box sx={{ 
+                  mt: 3,
+                  p: 2,
+                  borderRadius: 2,
+                  background: 'var(--surface-1)',
+                  border: '1px solid var(--border-color)',
+                  textAlign: 'center'
+                }}>
+                  <Security sx={{ color: 'var(--color-success)', fontSize: 20, mb: 1 }} />
+                  <Typography variant="caption" sx={{ 
+                    color: 'var(--color-text-secondary)',
+                    display: 'block'
+                  }}>
+                    🔒 Your information is secure and encrypted
+                  </Typography>
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
+        </Grid>
+      </Container>
+    </Box>
+  );
 }
