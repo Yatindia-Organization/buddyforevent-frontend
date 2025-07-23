@@ -48,12 +48,13 @@ import {
   People,
   EventAvailable,
   Visibility,
-  Copy,
   Timeline,
   CheckCircle,
   Cancel,
   Schedule
 } from '@mui/icons-material';
+import { default as Copy } from '@mui/icons-material/ContentCopy';
+
 import { useTheme } from '../../contexts/ThemeContext';
 import { useGlobalInfo } from '../../contexts/globalContext';
 import { API_ROUTE } from '../../lib/config';

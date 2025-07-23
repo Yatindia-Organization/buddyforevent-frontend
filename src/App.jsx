@@ -116,9 +116,9 @@ function App() {
               <Route path="/settings" element={<Settings />} />
               
               {/* Admin Plan Purchase Routes */}
-              <Route path="/plans" element={<PlanSelection />} />
-              <Route path="/plans/checkout" element={<PlanCheckout />} />
-              <Route path="/plans/success" element={<PlanSuccess />} />
+               <Route path="plans/selection" element={<PlanSelection />} />
+  <Route path="plans/checkout" element={<PlanCheckout />} />
+  <Route path="plans/success" element={<PlanSuccess />} />
               
               {/* Admin Event Promocodes */}
               <Route path="/event-promocodes" element={<EventPromocodes />} />

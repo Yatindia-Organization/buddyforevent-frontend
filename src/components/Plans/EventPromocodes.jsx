@@ -48,7 +48,6 @@ import {
   TrendingUp,
   EventAvailable,
   Visibility,
-  Copy,
   Timeline,
   CheckCircle,
   Cancel,
@@ -58,6 +57,7 @@ import {
   Star,
   Analytics
 } from '@mui/icons-material';
+import { default as Copy } from '@mui/icons-material/ContentCopy';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useGlobalInfo } from '../../contexts/globalContext';
 import { API_ROUTE } from '../../lib/config';
@@ -408,42 +408,7 @@ export default function EventPromocodes() {
       <Container maxWidth="lg" sx={{ py: 6 }}>
         {/* Stats Cards */}
         <Grid container spacing={4} sx={{ mb: 6 }}>
-          <Grid item xs={12} sm={6} md={3}>
-            <StatCard
-              title="Total Promocodes"
-              value={stats.totalPromocodes}
-              icon={<LocalOffer />}
-              color="#6366f1"
-              subtitle="Created by you"
-            />
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <StatCard
-              title="Active Promocodes"
-              value={stats.activePromocodes}
-              icon={<CheckCircle />}
-              color="#10b981"
-              subtitle="Currently available"
-            />
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <StatCard
-              title="Total Usage"
-              value={stats.totalUsage}
-              icon={<Timeline />}
-              color="#f59e0b"
-              subtitle="Times used"
-            />
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <StatCard
-              title="Total Discount Given"
-              value={`${stats.totalSavings}%`}
-              icon={<TrendingUp />}
-              color="#ef4444"
-              subtitle="Customer savings"
-            />
-          </Grid>
+    
         </Grid>
 
         {/* Event Filter */}
