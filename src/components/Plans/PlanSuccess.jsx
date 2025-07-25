@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Box,
   Typography,
@@ -8,93 +8,118 @@ import {
   CardContent,
   Container,
   Button,
-  LinearProgress,
-  Chip,
   Stack,
-  IconButton
+  Chip,
+  Alert,
+  Divider,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
+  LinearProgress
 } from '@mui/material';
 import {
   CheckCircle,
   Dashboard,
   EventAvailable,
   Timeline,
-  TrendingUp,
+  CardGiftcard,
+  Download,
   Share,
   WhatsApp,
-  Twitter,
   Email,
-  Download,
+  Twitter,
   Receipt,
-  CreditCard
+  CalendarMonth,
+  Star,
+  TrendingUp
 } from '@mui/icons-material';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useGlobalInfo } from '../../contexts/globalContext';
 import { API_ROUTE } from '../../lib/config';
+import { format } from 'date-fns';
 
 export default function PlanSuccess() {
   const { theme } = useTheme();
-  const { userId, updateCreditsAfterPlanPurchase, fetchUserData } = useGlobalInfo();
+  const { userId, changeUserType } = useGlobalInfo();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   
-  const [orderData, setOrderData] = useState(null);
+  const [orderDetails, setOrderDetails] = useState(null);
   const [planDetails, setPlanDetails] = useState(null);
+  const [userDetails, setUserDetails] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [countdown, setCountdown] = useState(10);
+  const [countdown, setCountdown] = useState(5);
+
+  const orderId = searchParams.get('orderId');
 
   useEffect(() => {
-    // Get order data from session storage
-    const storedOrderData = sessionStorage.getItem('planOrderData');
-    if (storedOrderData) {
-      const parsedData = JSON.parse(storedOrderData);
-      setOrderData(parsedData);
-      fetchPlanDetails(parsedData.plan);
+    if (!orderId) {
+      navigate('/plans');
+      return;
+    }
+    fetchOrderDetails();
+    startCountdown();
+  }, [orderId, navigate]);
+
+  const fetchOrderDetails = async () => {
+    try {
+      const token = localStorage.getItem('token');
       
-      // Update user credits in global context
-      if (parsedData.remainingTickets) {
-        updateCreditsAfterPlanPurchase(parsedData.remainingTickets);
+      // Fetch order details from backend
+      const orderResponse = await fetch(`${API_ROUTE}/api/v1/plan-orders/${orderId}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      if (!orderResponse.ok) {
+        throw new Error('Order not found');
       }
       
-      // Clear session storage
-      sessionStorage.removeItem('planOrderData');
-    } else {
-      // If no order data, redirect to plans
-      navigate('/plans/selection');
-    }
+      const orderData = await orderResponse.json();
+      setOrderDetails(orderData.data);
 
-    // Auto redirect countdown
+      // Fetch updated user details to get new plan
+      const userResponse = await fetch(`${API_ROUTE}/api/v1/users/${userId}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const userData = await userResponse.json();
+      setUserDetails(userData.data);
+
+      // Fetch plan details if plan is populated
+      if (orderData.data?.plan) {
+        const planId = typeof orderData.data.plan === 'object' ? 
+          orderData.data.plan._id : orderData.data.plan;
+          
+        const planResponse = await fetch(`${API_ROUTE}/api/v1/plans/${planId}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const planData = await planResponse.json();
+        setPlanDetails(planData.data);
+      }
+
+    } catch (error) {
+      console.error('Error fetching order details:', error);
+      // If order not found, redirect to plans
+      navigate('/plans');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const startCountdown = () => {
     const timer = setInterval(() => {
-      setCountdown(prev => {
+      setCountdown((prev) => {
         if (prev <= 1) {
+          clearInterval(timer);
           navigate('/dashboard');
           return 0;
         }
         return prev - 1;
       });
     }, 1000);
-
-    return () => clearInterval(timer);
-  }, [navigate, updateCreditsAfterPlanPurchase]);
-
-  const fetchPlanDetails = async (planId) => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_ROUTE}/api/v1/plans/${planId}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const data = await response.json();
-      
-      if (data.success) {
-        setPlanDetails(data.data);
-      }
-    } catch (error) {
-      console.error('Error fetching plan details:', error);
-    } finally {
-      setLoading(false);
-    }
   };
 
-  const formatDuration = (duration) => {
-    const days = parseInt(duration);
+  const formatDuration = (days) => {
     if (days >= 365) return `${Math.floor(days / 365)} year${Math.floor(days / 365) > 1 ? 's' : ''}`;
     if (days >= 30) return `${Math.floor(days / 30)} month${Math.floor(days / 30) > 1 ? 's' : ''}`;
     return `${days} day${days > 1 ? 's' : ''}`;
@@ -192,203 +217,349 @@ export default function PlanSuccess() {
           
           <Typography variant="h5" sx={{ 
             color: 'var(--color-text-secondary)',
-            mb: 4
+            mb: 3,
+            maxWidth: '600px',
+            mx: 'auto'
           }}>
-            Welcome to {planDetails?.name}! Your plan is now active.
+            Welcome to {planDetails?.name}! Your plan is now active and ready to use.
           </Typography>
 
-          {/* Plan Summary */}
-          <Card sx={{ 
-            maxWidth: 600, 
+          <Alert severity="success" sx={{ 
+            maxWidth: '500px',
             mx: 'auto',
-            borderRadius: 4,
-            background: 'var(--color-card-bg)',
-            border: '1px solid var(--border-color)',
-            mb: 4
+            borderRadius: 3,
+            '& .MuiAlert-message': {
+              fontSize: '1.1rem'
+            }
           }}>
-            <CardContent sx={{ p: 4 }}>
-              <Grid container spacing={3} alignItems="center">
-                <Grid item xs={12} md={6}>
-                  <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>
-                    {planDetails?.name}
-                  </Typography>
-                  <Typography variant="body2" sx={{ color: 'var(--color-text-secondary)', mb: 2 }}>
-                    {planDetails?.description}
-                  </Typography>
-                  <Stack direction="row" spacing={1} flexWrap="wrap">
-                    <Chip 
-                      icon={<CreditCard />}
-                      label={`₹${orderData?.finalAmount}`}
-                      color="primary"
-                      variant="filled"
-                    />
-                    <Chip 
-                      icon={<EventAvailable />}
-                      label={`${orderData?.remainingTickets} tickets`}
-                      color="success"
-                      variant="outlined"
-                    />
-                    {orderData?.discountAmount > 0 && (
-                      <Chip 
-                        label={`Saved ₹${orderData.discountAmount}`}
-                        color="warning"
-                        variant="outlined"
-                      />
-                    )}
-                  </Stack>
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <Box sx={{ textAlign: { xs: 'center', md: 'right' } }}>
-                    <Typography variant="body2" sx={{ color: 'var(--color-text-secondary)', mb: 1 }}>
-                      Order ID: {orderData?._id?.slice(-8).toUpperCase()}
-                    </Typography>
-                    <Typography variant="body2" sx={{ color: 'var(--color-text-secondary)', mb: 3 }}>
-                      Purchased on {new Date().toLocaleDateString()}
-                    </Typography>
-                    <Button
-                      variant="outlined"
-                      startIcon={<Receipt />}
-                      size="small"
-                      onClick={() => window.print()}
-                    >
-                      Download Receipt
-                    </Button>
-                  </Box>
-                </Grid>
-              </Grid>
-            </CardContent>
-          </Card>
-
-          {/* Share Success */}
-          <Box sx={{ mb: 4 }}>
-            <Typography variant="h6" sx={{ mb: 2 }}>
-              Share your success!
-            </Typography>
-            <Stack direction="row" spacing={2} justifyContent="center">
-              <IconButton
-                onClick={() => handleShareSuccess('whatsapp')}
-                sx={{ 
-                  background: '#25d366',
-                  color: 'white',
-                  '&:hover': { background: '#20ba5a' }
-                }}
-              >
-                <WhatsApp />
-              </IconButton>
-              <IconButton
-                onClick={() => handleShareSuccess('twitter')}
-                sx={{ 
-                  background: '#1da1f2',
-                  color: 'white',
-                  '&:hover': { background: '#1a91da' }
-                }}
-              >
-                <Twitter />
-              </IconButton>
-              <IconButton
-                onClick={() => handleShareSuccess('email')}
-                sx={{ 
-                  background: '#ea4335',
-                  color: 'white',
-                  '&:hover': { background: '#d23925' }
-                }}
-              >
-                <Email />
-              </IconButton>
-            </Stack>
-          </Box>
+            Your ticket allowance has been activated. Start creating events now!
+          </Alert>
         </Box>
 
-        {/* Next Steps */}
-        <Typography variant="h4" sx={{ 
-          fontFamily: 'var(--font-heading)',
-          fontWeight: 700,
-          color: 'var(--color-text)',
-          textAlign: 'center',
-          mb: 4
-        }}>
-          What's Next?
-        </Typography>
-
-        <Grid container spacing={4} sx={{ mb: 6 }}>
-          {nextSteps.map((step, index) => (
-            <Grid item xs={12} md={4} key={index}>
-              <Card sx={{ 
-                height: '100%',
-                borderRadius: 4,
-                background: 'var(--color-card-bg)',
-                border: '1px solid var(--border-color)',
-                transition: 'all 0.3s ease',
-                cursor: 'pointer',
-                '&:hover': {
-                  transform: 'translateY(-4px)',
-                  boxShadow: '0 8px 25px rgba(0,0,0,0.1)'
-                }
-              }}
-              onClick={step.action}>
-                <CardContent sx={{ p: 4, textAlign: 'center' }}>
-                  <Box sx={{ 
-                    color: '#6366f1',
-                    mb: 2,
-                    '& svg': { fontSize: 48 }
-                  }}>
-                    {step.icon}
-                  </Box>
-                  <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
-                    {step.title}
-                  </Typography>
-                  <Typography variant="body2" sx={{ color: 'var(--color-text-secondary)' }}>
-                    {step.description}
-                  </Typography>
-                </CardContent>
-              </Card>
-            </Grid>
-          ))}
-        </Grid>
-
-        {/* Auto Redirect Notice */}
-        <Grid container spacing={4}>
+        <Grid container spacing={6}>
+          {/* Order Summary */}
           <Grid item xs={12} md={8}>
-            <Card sx={{ 
-              borderRadius: 4,
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-              color: 'white'
-            }}>
-              <CardContent sx={{ p: 4 }}>
-                <Typography variant="h5" sx={{ fontWeight: 700, mb: 2 }}>
-                  🚀 Ready to Create Events!
-                </Typography>
-                <Typography variant="body1" sx={{ mb: 3, opacity: 0.9 }}>
-                  Your {planDetails?.name} plan gives you {orderData?.remainingTickets} ticket credits. 
-                  Start creating events and selling tickets right away!
-                </Typography>
-                <Button
-                  variant="contained"
-                  size="large"
-                  onClick={() => navigate('/create-event')}
-                  sx={{
-                    background: 'rgba(255,255,255,0.2)',
-                    color: 'white',
-                    '&:hover': {
-                      background: 'rgba(255,255,255,0.3)'
-                    }
-                  }}
-                >
-                  Create Your First Event
-                </Button>
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid item xs={12} md={4}>
+            {/* Plan Details */}
             <Card sx={{ 
               borderRadius: 4,
               background: 'var(--color-card-bg)',
               border: '1px solid var(--border-color)',
-              textAlign: 'center'
+              mb: 4
             }}>
               <CardContent sx={{ p: 4 }}>
+                <Typography variant="h6" sx={{ 
+                  fontFamily: 'var(--font-heading)',
+                  fontWeight: 700,
+                  color: 'var(--color-text)',
+                  mb: 3,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1
+                }}>
+                  <CardGiftcard />
+                  Your New Plan
+                </Typography>
+
+                <Grid container spacing={3}>
+                  <Grid item xs={12} md={6}>
+                    <Box sx={{ 
+                      p: 3,
+                      background: 'linear-gradient(45deg, #667eea, #764ba2)',
+                      borderRadius: 3,
+                      color: 'white',
+                      textAlign: 'center'
+                    }}>
+                      <Typography variant="h4" sx={{ fontWeight: 700, mb: 1 }}>
+                        {planDetails?.name}
+                      </Typography>
+                      <Typography variant="body1" sx={{ opacity: 0.9, mb: 2 }}>
+                        {planDetails?.description}
+                      </Typography>
+                      <Chip 
+                        label={`Valid for ${formatDuration(planDetails?.durationInDays)}`}
+                        sx={{ 
+                          background: 'rgba(255,255,255,0.2)',
+                          color: 'white',
+                          fontWeight: 600
+                        }}
+                      />
+                    </Box>
+                  </Grid>
+                  
+                  <Grid item xs={12} md={6}>
+                    <Stack spacing={2}>
+                      <Box>
+                        <Typography variant="body2" sx={{ color: 'var(--color-text-secondary)' }}>
+                          Ticket Allowance
+                        </Typography>
+                        <Typography variant="h5" sx={{ fontWeight: 700, color: 'var(--color-success)' }}>
+                          {planDetails?.ticketAllowance || 'Unlimited'} tickets
+                        </Typography>
+                      </Box>
+                      <Box>
+                        <Typography variant="body2" sx={{ color: 'var(--color-text-secondary)' }}>
+                          Plan Duration
+                        </Typography>
+                        <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                          {formatDuration(planDetails?.durationInDays)}
+                        </Typography>
+                      </Box>
+                      <Box>
+                        <Typography variant="body2" sx={{ color: 'var(--color-text-secondary)' }}>
+                          Amount Paid
+                        </Typography>
+                        <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                          ₹{orderDetails?.finalAmount?.toLocaleString()}
+                        </Typography>
+                      </Box>
+                    </Stack>
+                  </Grid>
+                </Grid>
+              </CardContent>
+            </Card>
+
+            {/* Next Steps */}
+            <Card sx={{ 
+              borderRadius: 4,
+              background: 'var(--color-card-bg)',
+              border: '1px solid var(--border-color)'
+            }}>
+              <CardContent sx={{ p: 4 }}>
+                <Typography variant="h6" sx={{ 
+                  fontFamily: 'var(--font-heading)',
+                  fontWeight: 700,
+                  color: 'var(--color-text)',
+                  mb: 3
+                }}>
+                  What's Next?
+                </Typography>
+                
+                <Grid container spacing={3}>
+                  {nextSteps.map((step, index) => (
+                    <Grid item xs={12} md={4} key={index}>
+                      <Card sx={{ 
+                        border: '1px solid var(--border-color)',
+                        '&:hover': {
+                          transform: 'translateY(-4px)',
+                          boxShadow: 'var(--shadow-lg)'
+                        },
+                        transition: 'all 0.3s ease',
+                        cursor: 'pointer'
+                      }}
+                      onClick={step.action}
+                      >
+                        <CardContent sx={{ textAlign: 'center', p: 3 }}>
+                          <Box sx={{
+                            width: 60,
+                            height: 60,
+                            borderRadius: '50%',
+                            background: `var(--color-primary)15`,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            mx: 'auto',
+                            mb: 2
+                          }}>
+                            {React.cloneElement(step.icon, { 
+                              sx: { fontSize: 32, color: 'var(--color-primary)' } 
+                            })}
+                          </Box>
+                          <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
+                            {step.title}
+                          </Typography>
+                          <Typography variant="body2" sx={{ color: 'var(--color-text-secondary)' }}>
+                            {step.description}
+                          </Typography>
+                        </CardContent>
+                      </Card>
+                    </Grid>
+                  ))}
+                </Grid>
+              </CardContent>
+            </Card>
+          </Grid>
+
+          {/* Order Receipt & Actions */}
+          <Grid item xs={12} md={4}>
+            {/* Order Receipt */}
+            <Card sx={{ 
+              borderRadius: 4,
+              background: 'var(--color-card-bg)',
+              border: '1px solid var(--border-color)',
+              mb: 4
+            }}>
+              <CardContent sx={{ p: 4 }}>
+                <Typography variant="h6" sx={{ 
+                  fontFamily: 'var(--font-heading)',
+                  fontWeight: 700,
+                  color: 'var(--color-text)',
+                  mb: 3,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1
+                }}>
+                  <Receipt />
+                  Order Details
+                </Typography>
+
+                <Stack spacing={2} sx={{ mb: 3 }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <Typography variant="body2">Order ID</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 600, fontFamily: 'monospace' }}>
+                      #{orderId?.slice(-8)}
+                    </Typography>
+                  </Box>
+                  
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <Typography variant="body2">Date</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                      {format(new Date(), 'MMM dd, yyyy')}
+                    </Typography>
+                  </Box>
+
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <Typography variant="body2">Payment Method</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                      {orderDetails?.paymentMethod || 'Card'}
+                    </Typography>
+                  </Box>
+
+                  {orderDetails?.promocode && (
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <Typography variant="body2">Promocode</Typography>
+                      <Chip 
+                        label={orderDetails.promocode}
+                        size="small"
+                        sx={{ fontFamily: 'monospace' }}
+                      />
+                    </Box>
+                  )}
+                </Stack>
+
+                <Divider sx={{ my: 2 }} />
+
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
+                  <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                    Total Paid
+                  </Typography>
+                  <Typography variant="h6" sx={{ 
+                    fontWeight: 700,
+                    color: 'var(--color-success)'
+                  }}>
+                    ₹{orderDetails?.finalAmount?.toLocaleString()}
+                  </Typography>
+                </Box>
+
+                <Button
+                  variant="outlined"
+                  fullWidth
+                  startIcon={<Download />}
+                  sx={{
+                    borderColor: 'var(--color-primary)',
+                    color: 'var(--color-primary)',
+                    '&:hover': {
+                      background: 'var(--color-primary)10'
+                    }
+                  }}
+                >
+                  Download Receipt
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Share Success */}
+            <Card sx={{ 
+              borderRadius: 4,
+              background: 'var(--color-card-bg)',
+              border: '1px solid var(--border-color)',
+              mb: 4
+            }}>
+              <CardContent sx={{ p: 4 }}>
+                <Typography variant="h6" sx={{ 
+                  fontFamily: 'var(--font-heading)',
+                  fontWeight: 700,
+                  color: 'var(--color-text)',
+                  mb: 3,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1
+                }}>
+                  <Share />
+                  Share Your Success
+                </Typography>
+
+                <Typography variant="body2" sx={{ 
+                  color: 'var(--color-text-secondary)',
+                  mb: 3
+                }}>
+                  Let others know about your plan upgrade!
+                </Typography>
+
+                <Grid container spacing={2}>
+                  <Grid item xs={4}>
+                    <Button
+                      variant="outlined"
+                      fullWidth
+                      onClick={() => handleShareSuccess('whatsapp')}
+                      sx={{
+                        borderColor: '#25D366',
+                        color: '#25D366',
+                        '&:hover': {
+                          background: '#25D36610',
+                          borderColor: '#25D366'
+                        }
+                      }}
+                    >
+                      <WhatsApp />
+                    </Button>
+                  </Grid>
+                  <Grid item xs={4}>
+                    <Button
+                      variant="outlined"
+                      fullWidth
+                      onClick={() => handleShareSuccess('twitter')}
+                      sx={{
+                        borderColor: '#1DA1F2',
+                        color: '#1DA1F2',
+                        '&:hover': {
+                          background: '#1DA1F210',
+                          borderColor: '#1DA1F2'
+                        }
+                      }}
+                    >
+                      <Twitter />
+                    </Button>
+                  </Grid>
+                  <Grid item xs={4}>
+                    <Button
+                      variant="outlined"
+                      fullWidth
+                      onClick={() => handleShareSuccess('email')}
+                      sx={{
+                        borderColor: 'var(--color-text-secondary)',
+                        color: 'var(--color-text-secondary)',
+                        '&:hover': {
+                          background: 'var(--color-bg-subtle)'
+                        }
+                      }}
+                    >
+                      <Email />
+                    </Button>
+                  </Grid>
+                </Grid>
+              </CardContent>
+            </Card>
+
+            {/* Auto Redirect */}
+            <Card sx={{ 
+              borderRadius: 4,
+              background: 'linear-gradient(45deg, #667eea, #764ba2)',
+              color: 'white'
+            }}>
+              <CardContent sx={{ p: 4, textAlign: 'center' }}>
+                <CalendarMonth sx={{ fontSize: 48, mb: 2, opacity: 0.9 }} />
                 <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
-                  Auto Redirect
+                  Ready to Get Started?
                 </Typography>
                 <Typography variant="body2" sx={{ opacity: 0.9, mb: 3 }}>
                   Redirecting to dashboard in {countdown} seconds...
@@ -460,18 +631,18 @@ export default function PlanSuccess() {
                     Track Analytics
                   </Typography>
                   <Typography variant="body2" sx={{ color: 'var(--color-text-secondary)' }}>
-                    Monitor event performance and ticket sales
+                    Monitor attendance, revenue, and engagement
                   </Typography>
                 </Box>
               </Grid>
               <Grid item xs={12} md={3}>
                 <Box sx={{ textAlign: 'center' }}>
-                  <Dashboard sx={{ fontSize: 48, color: '#8b5cf6', mb: 2 }} />
+                  <Star sx={{ fontSize: 48, color: '#ef4444', mb: 2 }} />
                   <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
-                    Manage Everything
+                    Premium Support
                   </Typography>
                   <Typography variant="body2" sx={{ color: 'var(--color-text-secondary)' }}>
-                    Full control over events, participants, and more
+                    Get priority help whenever you need it
                   </Typography>
                 </Box>
               </Grid>
@@ -479,6 +650,15 @@ export default function PlanSuccess() {
           </CardContent>
         </Card>
       </Container>
+
+      <style jsx>{`
+        @keyframes bounce {
+          0%, 20%, 53%, 80%, 100% { transform: translateY(0); }
+          40%, 43% { transform: translateY(-30px); }
+          70% { transform: translateY(-15px); }
+          90% { transform: translateY(-4px); }
+        }
+      `}</style>
     </Box>
   );
 }

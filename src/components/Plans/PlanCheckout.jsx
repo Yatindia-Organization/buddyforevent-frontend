@@ -97,9 +97,8 @@ export default function PlanCheckout() {
     try {
       const token = localStorage.getItem('token');
       
-      // Create plan order
+      // Step 1: Create plan order
       const orderPayload = {
-        user: userId,
         plan: orderData.planId,
         promocode: orderData.promocode,
         originalPrice: orderData.originalPrice,
@@ -109,7 +108,7 @@ export default function PlanCheckout() {
         paymentMethod: paymentMethod
       };
 
-      const response = await fetch(`${API_ROUTE}/api/v1/plan-orders`, {
+      const createOrderResponse = await fetch(`${API_ROUTE}/api/v1/plan-orders`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -118,34 +117,44 @@ export default function PlanCheckout() {
         body: JSON.stringify(orderPayload)
       });
 
-      if (response.ok) {
-        const result = await response.json();
-        
-        // Mock payment processing
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        
-        // Update order status to completed (mock payment success)
-        await fetch(`${API_ROUTE}/api/v1/plan-orders/${result.data._id}/status`, {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({ 
-            status: 'completed',
-            paymentId: `MOCK_${Date.now()}`,
-            paymentMethod: paymentMethod
-          })
-        });
-
-        // Clear session storage
-        sessionStorage.removeItem('planOrderData');
-        
-        // Navigate to success page
-        navigate(`/plans/success?orderId=${result.data._id}`);
-      } else {
-        throw new Error('Payment failed');
+      if (!createOrderResponse.ok) {
+        throw new Error('Failed to create order');
       }
+
+      const orderResult = await createOrderResponse.json();
+      const orderId = orderResult.data._id;
+      
+      // Step 2: Mock payment processing delay
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Step 3: Complete payment (mock payment success)
+      const paymentPayload = {
+        paymentId: `MOCK_${Date.now()}`,
+        paymentMethod: paymentMethod,
+        transactionId: `TXN_${Date.now()}`
+      };
+
+      const completePaymentResponse = await fetch(`${API_ROUTE}/api/v1/plan-orders/${orderId}/complete-payment`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(paymentPayload)
+      });
+
+      if (!completePaymentResponse.ok) {
+        throw new Error('Payment processing failed');
+      }
+
+      const completedOrder = await completePaymentResponse.json();
+      
+      // Step 4: Clear session storage and navigate to success
+      sessionStorage.removeItem('planOrderData');
+      
+      // Navigate to success page with order ID
+      navigate(`/plans/success?orderId=${orderId}`);
+      
     } catch (error) {
       console.error('Error processing payment:', error);
       alert('Payment failed. Please try again.');

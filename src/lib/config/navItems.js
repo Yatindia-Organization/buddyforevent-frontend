@@ -48,11 +48,6 @@ const navConfig = {
             icon: '/svg/setting.svg'
         },
         {
-            label: 'Payment History',
-            path: '/reports',
-            icon: '/svg/create-event.svg'
-        },
-        {
             label: 'Profile',
             path: '/profile',
             icon: '/svg/bulk-add.svg'

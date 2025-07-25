@@ -236,7 +236,6 @@ export default function PromocodeManagement() {
         type: promocode.type || 'plan',
         discount: promocode.discount || 10,
         maxUsage: promocode.maxUsage || 1,
-        eventId: promocode.eventId || '',
         expiresAt: promocode.expiresAt ? format(new Date(promocode.expiresAt), 'yyyy-MM-dd') : '',
         active: promocode.active !== undefined ? promocode.active : true
       });
@@ -660,25 +659,34 @@ export default function PromocodeManagement() {
                 />
               </Grid>
               {formData.type === 'ticket' && (
-                <Grid item xs={12}>
-                  <FormControl fullWidth>
-                    <InputLabel>Event (Optional)</InputLabel>
-                    <Select
-                      value={formData.eventId}
-                      onChange={(e) => setFormData({...formData, eventId: e.target.value})}
-                      disabled={dialogType === 'view'}
-                      label="Event (Optional)"
-                    >
-                      <MenuItem value="">All Events</MenuItem>
-                      {events.map(event => (
-                        <MenuItem key={event._id} value={event._id}>
-                          {event.name}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                </Grid>
-              )}
+  <Grid item xs={12}>
+<FormControl fullWidth>
+  <InputLabel shrink={!!formData.eventId || formData.eventId === ''}>
+    Event (Optional)
+  </InputLabel>
+  <Select
+    value={formData.eventId}
+    onChange={(e) => setFormData({...formData, eventId: e.target.value})}
+    disabled={dialogType === 'view'}
+    label="Event (Optional)"
+    displayEmpty
+    notched={!!formData.eventId || formData.eventId === ''}
+  >
+    <MenuItem value="">
+      <em>Apply to all events (leave empty for global discount)</em>
+    </MenuItem>
+    {events.map(event => (
+      <MenuItem key={event._id} value={event._id}>
+        {event.name}
+      </MenuItem>
+    ))}
+  </Select>
+</FormControl>
+    <Typography variant="caption" sx={{ color: 'text.secondary', mt: 1, display: 'block' }}>
+      Select a specific event or leave empty to apply discount to all events
+    </Typography>
+  </Grid>
+)}
               <Grid item xs={12} md={6}>
                 <TextField
                   fullWidth

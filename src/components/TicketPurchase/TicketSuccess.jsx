@@ -15,7 +15,8 @@ import {
   IconButton,
   Alert,
   Pagination,
-  Avatar
+  Avatar,
+  Paper
 } from '@mui/material';
 import { 
   CheckCircle,
@@ -27,7 +28,12 @@ import {
   GetApp,
   ArrowBack,
   ArrowForward,
-  QrCode
+  QrCode,
+  CalendarToday,
+  LocationOn,
+  Receipt,
+  Email,
+  Phone
 } from '@mui/icons-material';
 import { format } from 'date-fns';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -57,41 +63,23 @@ export default function TicketSuccess() {
       console.log('Order data:', data.data);
       setOrder(data.data);
       
-      // Get tickets with QR codes from order completion
+      // Extract tickets directly from ALREADY POPULATED submissionIds
       if (data.data.orderStatus === 'completed' && data.data.submissionIds) {
-        // Fetch individual submissions to get QR codes
-        const ticketPromises = data.data.submissionIds.map(async (submissionId) => {
-          try {
-            const submissionResponse = await fetch(`${API_ROUTE}/api/v1/event/form-submission/${submissionId}`);
-            if (submissionResponse.ok) {
-              const submissionData = await submissionResponse.json();
-              return submissionData;
-            }
-          } catch (err) {
-            console.error('Error fetching submission:', err);
-            return null;
-          }
+        const tickets = data.data.submissionIds.map((submission, index) => {
+          const tierName = findTierForParticipant(submission.participant, data.data.ticketDetails);
+          
+          return {
+            _id: submission._id,
+            participant: submission.participant,
+            tierName: tierName,
+            seat: submission.seat,
+            qrcodeUrl: submission.qrcodeUrl,
+            qrcode: submission.qrcode
+          };
         });
         
-        const submissionResults = await Promise.all(ticketPromises);
-        const validTickets = submissionResults.filter(ticket => ticket && ticket.qrcodeUrl);
-        setTickets(validTickets);
-      } else {
-        // Fallback: create ticket info from order data without QR codes
-        const ticketInfo = [];
-        data.data.ticketDetails?.forEach((tierGroup, tierIndex) => {
-          tierGroup.participantForms?.forEach((form, formIndex) => {
-            ticketInfo.push({
-              _id: `${tierIndex}_${formIndex}`,
-              participant: form.participantName || `Guest ${ticketInfo.length + 1}`,
-              tierName: tierGroup.tierName,
-              seat: form.seat,
-              qrcodeUrl: null,
-              qrcode: `DEMO-${Date.now()}-${ticketInfo.length}`
-            });
-          });
-        });
-        setTickets(ticketInfo);
+        console.log('Processed tickets:', tickets);
+        setTickets(tickets);
       }
       
     } catch (error) {
@@ -99,6 +87,18 @@ export default function TicketSuccess() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const findTierForParticipant = (participantName, ticketDetails) => {
+    for (const tierGroup of ticketDetails) {
+      const foundForm = tierGroup.participantForms.find(form => 
+        form.participantName === participantName
+      );
+      if (foundForm) {
+        return tierGroup.tierName;
+      }
+    }
+    return 'General';
   };
 
   const downloadTicket = async (ticketUrl, filename) => {
@@ -185,7 +185,7 @@ export default function TicketSuccess() {
         py: 6,
         textAlign: 'center'
       }}>
-        <Container maxWidth="lg">
+        <Container maxWidth="xl">
           <Box sx={{ 
             display: 'flex',
             flexDirection: 'column',
@@ -193,53 +193,54 @@ export default function TicketSuccess() {
             animation: 'fadeInUp 0.8s ease-out'
           }}>
             <CheckCircle sx={{ 
-              fontSize: 80, 
+              fontSize: 100, 
               color: 'white',
-              mb: 2,
-              filter: 'drop-shadow(0 10px 20px rgba(0,0,0,0.2))'
+              mb: 3,
+              filter: 'drop-shadow(0 10px 20px rgba(0,0,0,0.3))'
             }} />
-            <Typography variant="h3" sx={{ 
+            <Typography variant="h2" sx={{ 
               color: 'white', 
               fontFamily: 'var(--font-heading)',
               fontWeight: 800,
-              mb: 1,
-              fontSize: { xs: '1.8rem', md: '2.5rem' }
+              mb: 2,
+              fontSize: { xs: '2rem', md: '3rem' }
             }}>
-              Payment Successful!
+              🎉 Payment Successful!
             </Typography>
-            <Typography variant="h6" sx={{ 
+            <Typography variant="h5" sx={{ 
               color: 'rgba(255,255,255,0.9)',
-              mb: 3
+              mb: 4,
+              maxWidth: '600px'
             }}>
-              Your tickets are ready for download
+              Your beautiful event tickets are ready for download
             </Typography>
             
             {/* Quick stats */}
-            <Grid container spacing={3} sx={{ maxWidth: '500px' }}>
+            <Grid container spacing={4} sx={{ maxWidth: '600px' }}>
               <Grid item xs={4}>
                 <Box sx={{ textAlign: 'center' }}>
-                  <Typography variant="h4" sx={{ 
+                  <Typography variant="h3" sx={{ 
                     color: 'white',
-                    fontWeight: 700,
+                    fontWeight: 800,
                     fontFamily: 'var(--font-heading)'
                   }}>
                     {tickets.length}
                   </Typography>
-                  <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.8)' }}>
+                  <Typography variant="body1" sx={{ color: 'rgba(255,255,255,0.9)', fontWeight: 600 }}>
                     Tickets
                   </Typography>
                 </Box>
               </Grid>
               <Grid item xs={4}>
                 <Box sx={{ textAlign: 'center' }}>
-                  <Typography variant="h4" sx={{ 
+                  <Typography variant="h3" sx={{ 
                     color: 'white',
-                    fontWeight: 700,
+                    fontWeight: 800,
                     fontFamily: 'var(--font-heading)'
                   }}>
                     ₹{order?.totalAmount?.toLocaleString()}
                   </Typography>
-                  <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.8)' }}>
+                  <Typography variant="body1" sx={{ color: 'rgba(255,255,255,0.9)', fontWeight: 600 }}>
                     Total Paid
                   </Typography>
                 </Box>
@@ -247,10 +248,11 @@ export default function TicketSuccess() {
               <Grid item xs={4}>
                 <Box sx={{ textAlign: 'center' }}>
                   <CheckCircle sx={{ 
-                    fontSize: '3rem',
-                    color: 'white'
+                    fontSize: '3.5rem',
+                    color: 'white',
+                    mb: 1
                   }} />
-                  <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.8)' }}>
+                  <Typography variant="body1" sx={{ color: 'rgba(255,255,255,0.9)', fontWeight: 600 }}>
                     Confirmed
                   </Typography>
                 </Box>
@@ -260,260 +262,387 @@ export default function TicketSuccess() {
         </Container>
       </Box>
 
-      <Container maxWidth="lg" sx={{ py: 6 }}>
-        <Grid container spacing={4}>
-          {/* Left Sidebar - Ticket List */}
-          <Grid item xs={12} md={3}>
-            <Card sx={{ 
-              borderRadius: 4,
-              background: 'var(--color-card-bg)',
-              border: '1px solid var(--border-color)',
-              height: 'fit-content',
-              position: 'sticky',
-              top: 24
-            }}>
-              <CardContent sx={{ p: 3 }}>
-                <Typography variant="h6" sx={{ 
-                  fontFamily: 'var(--font-heading)',
-                  fontWeight: 700,
-                  color: 'var(--color-text)',
-                  mb: 3,
-                  textAlign: 'center'
-                }}>
-                  All Tickets ({tickets.length})
-                </Typography>
-
-                <Stack spacing={2}>
-                  {tickets.map((ticket, index) => (
-                    <Card 
-                      key={ticket._id}
-                      onClick={() => setCurrentTicketIndex(index)}
+      <Container maxWidth="xl" sx={{ py: 6 }}>
+        <Grid container spacing={6}>
+          {/* Left Side - Full Size Ticket Display */}
+          <Grid item xs={12} lg={8}>
+            {currentTicket && (
+              <Card sx={{ 
+                borderRadius: 6,
+                border: '1px solid var(--border-color)',
+                background: 'var(--color-card-bg)',
+                overflow: 'hidden',
+                boxShadow: 'var(--shadow-xl)'
+              }}>
+                <CardContent sx={{ p: 0 }}>
+                  {/* Ticket Navigation Header */}
+                  <Box sx={{ 
+                    p: 4, 
+                    background: 'var(--color-bg-subtle)',
+                    borderBottom: '1px solid var(--border-color)',
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    alignItems: 'center' 
+                  }}>
+                    <IconButton 
+                      onClick={() => setCurrentTicketIndex(Math.max(0, currentTicketIndex - 1))}
+                      disabled={currentTicketIndex === 0}
                       sx={{ 
-                        p: 2,
-                        cursor: 'pointer',
-                        borderRadius: 3,
-                        border: currentTicketIndex === index 
-                          ? '2px solid var(--color-primary)' 
-                          : '1px solid var(--border-color)',
-                        background: currentTicketIndex === index 
-                          ? 'var(--color-primary-light)' 
-                          : 'var(--color-bg)',
-                        transition: 'all 0.3s ease',
-                        '&:hover': {
-                          borderColor: 'var(--color-primary)',
-                          transform: 'translateY(-2px)'
-                        }
+                        background: 'var(--color-card-bg)',
+                        '&:hover': { background: 'var(--color-primary)', color: 'white' }
                       }}
                     >
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                        <Avatar sx={{ 
-                          width: 32, 
-                          height: 32,
-                          background: currentTicketIndex === index 
-                            ? 'var(--color-primary)' 
-                            : 'var(--color-text-secondary)',
-                          fontSize: '0.8rem'
-                        }}>
-                          {index + 1}
-                        </Avatar>
-                        <Box sx={{ flex: 1, minWidth: 0 }}>
-                          <Typography variant="body2" sx={{ 
-                            fontWeight: 600,
-                            color: 'var(--color-text)',
-                            fontSize: '0.85rem',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap'
-                          }}>
-                            {ticket.participant || `Guest ${index + 1}`}
-                          </Typography>
-                          <Typography variant="caption" sx={{ 
-                            color: 'var(--color-text-secondary)',
-                            fontSize: '0.75rem'
-                          }}>
-                            {ticket.tierName}
-                          </Typography>
-                        </Box>
-                      </Box>
-                    </Card>
-                  ))}
-                </Stack>
-
-                <Box sx={{ mt: 3, textAlign: 'center' }}>
-                  <Button
-                    variant="outlined"
-                    size="small"
-                    startIcon={downloading ? <CircularProgress size={16} /> : <GetApp />}
-                    onClick={downloadAllTickets}
-                    disabled={downloading}
-                    fullWidth
-                    sx={{
-                      borderColor: 'var(--color-primary)',
-                      color: 'var(--color-primary)',
-                      fontSize: '0.8rem'
-                    }}
-                  >
-                    {downloading ? 'Downloading...' : 'Download All'}
-                  </Button>
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-
-          {/* Center - Current Ticket + Order Summary */}
-          <Grid item xs={12} md={6}>
-            <Stack spacing={4}>
-              {/* Current Ticket Display */}
-              {currentTicket && (
-                <Card sx={{ 
-                  borderRadius: 4,
-                  border: '1px solid var(--border-color)',
-                  background: 'var(--color-card-bg)'
-                }}>
-                  <CardContent sx={{ p: 4, textAlign: 'center' }}>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-                      <IconButton 
-                        onClick={() => setCurrentTicketIndex(Math.max(0, currentTicketIndex - 1))}
-                        disabled={currentTicketIndex === 0}
-                      >
-                        <ArrowBack />
-                      </IconButton>
-                      
-                      <Typography variant="h6" sx={{ 
+                      <ArrowBack />
+                    </IconButton>
+                    
+                    <Box sx={{ textAlign: 'center' }}>
+                      <Typography variant="h5" sx={{ 
                         fontFamily: 'var(--font-heading)',
-                        fontWeight: 700
+                        fontWeight: 700,
+                        mb: 1
                       }}>
-                        Ticket {currentTicketIndex + 1} of {tickets.length}
+                        {currentTicket.participant || `Guest ${currentTicketIndex + 1}`}
                       </Typography>
-                      
-                      <IconButton 
-                        onClick={() => setCurrentTicketIndex(Math.min(tickets.length - 1, currentTicketIndex + 1))}
-                        disabled={currentTicketIndex === tickets.length - 1}
-                      >
-                        <ArrowForward />
-                      </IconButton>
-                    </Box>
-
-                    {/* QR Code Display */}
-                    <Box sx={{ mb: 4 }}>
-                      {currentTicket.qrcodeUrl ? (
-                        <Box
-                          component="img"
-                          src={currentTicket.qrcodeUrl}
-                          alt="Ticket QR Code"
-                          sx={{
-                            width: '250px',
-                            height: '250px',
-                            borderRadius: 3,
-                            border: '2px solid var(--border-color)',
-                            objectFit: 'contain',
-                            background: 'white'
-                          }}
-                        />
-                      ) : (
-                        <Box sx={{
-                          width: '250px',
-                          height: '250px',
-                          background: 'var(--gradient-primary)',
-                          borderRadius: 3,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
+                      <Chip 
+                        label={`Ticket ${currentTicketIndex + 1} of ${tickets.length}`}
+                        sx={{ 
+                          background: 'var(--color-primary)',
                           color: 'white',
-                          flexDirection: 'column',
-                          gap: 2,
-                          mx: 'auto'
-                        }}>
-                          <QrCode sx={{ fontSize: 60 }} />
-                          <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                            QR CODE
-                          </Typography>
-                          <Typography variant="caption">
-                            #{currentTicketIndex + 1}
-                          </Typography>
-                        </Box>
-                      )}
-                    </Box>
-
-                    {/* Ticket Details */}
-                    <Stack spacing={2} sx={{ mb: 3 }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
-                        <Person sx={{ fontSize: 20, color: 'var(--color-primary)' }} />
-                        <Typography variant="h6" sx={{ 
-                          fontFamily: 'var(--font-heading)',
                           fontWeight: 600
-                        }}>
-                          {currentTicket.participant || `Guest ${currentTicketIndex + 1}`}
+                        }}
+                      />
+                    </Box>
+                    
+                    <IconButton 
+                      onClick={() => setCurrentTicketIndex(Math.min(tickets.length - 1, currentTicketIndex + 1))}
+                      disabled={currentTicketIndex === tickets.length - 1}
+                      sx={{ 
+                        background: 'var(--color-card-bg)',
+                        '&:hover': { background: 'var(--color-primary)', color: 'white' }
+                      }}
+                    >
+                      <ArrowForward />
+                    </IconButton>
+                  </Box>
+
+                  {/* Full Size Ticket Image */}
+                  <Box sx={{ 
+                    p: 4,
+                    display: 'flex',
+                    justifyContent: 'center',
+                    background: 'linear-gradient(45deg, #f8fafc, #e2e8f0)'
+                  }}>
+                    {currentTicket.qrcodeUrl ? (
+                      <Box
+                        component="img"
+                        src={currentTicket.qrcodeUrl}
+                        alt={`Ticket for ${currentTicket.participant}`}
+                        sx={{
+                          maxWidth: '100%',
+                          maxHeight: '800px',
+                          borderRadius: 4,
+                          boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
+                          border: '1px solid rgba(255,255,255,0.8)',
+                          objectFit: 'contain'
+                        }}
+                      />
+                    ) : (
+                      <Box sx={{
+                        width: '400px',
+                        height: '600px',
+                        background: 'var(--gradient-primary)',
+                        borderRadius: 4,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: 'white',
+                        flexDirection: 'column',
+                        gap: 3
+                      }}>
+                        <QrCode sx={{ fontSize: 100 }} />
+                        <Typography variant="h4" sx={{ fontWeight: 700 }}>
+                          Apple Ticket
+                        </Typography>
+                        <Typography variant="h6">
+                          #{currentTicketIndex + 1}
                         </Typography>
                       </Box>
-                      
-                      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
-                        <Chip 
-                          label={currentTicket.tierName}
-                          sx={{ 
-                            background: 'var(--color-primary)',
-                            color: 'white',
-                            fontWeight: 600
-                          }}
-                        />
-                        {currentTicket.seat && (
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                            <EventSeat sx={{ fontSize: 16, color: 'var(--color-text-secondary)' }} />
-                            <Typography variant="body2" sx={{ color: 'var(--color-text-secondary)' }}>
-                              Seat: {currentTicket.seat}
-                            </Typography>
-                          </Box>
-                        )}
-                      </Box>
-                      
-                      <Typography variant="body2" sx={{ 
-                        color: 'var(--color-text-secondary)',
-                        fontFamily: 'monospace',
-                        fontSize: '0.85rem'
-                      }}>
-                        Ticket ID: {currentTicket.qrcode || `TKT-${orderId?.slice(-8).toUpperCase()}-${currentTicketIndex + 1}`}
-                      </Typography>
-                    </Stack>
+                    )}
+                  </Box>
 
-                    {/* Download Button */}
-                    <Button
-                      variant="contained"
-                      startIcon={<Download />}
-                      onClick={() => currentTicket.qrcodeUrl && downloadTicket(
-                        currentTicket.qrcodeUrl, 
-                        `ticket_${currentTicket.participant?.replace(/\s+/g, '_') || `guest_${currentTicketIndex + 1}`}.png`
-                      )}
-                      disabled={!currentTicket.qrcodeUrl}
-                      sx={{
-                        borderRadius: '50px',
-                        background: 'var(--gradient-primary)',
-                        px: 4,
-                        '&:hover': {
-                          background: 'var(--gradient-primary)',
-                          transform: 'translateY(-2px)'
-                        }
-                      }}
-                    >
-                      Download This Ticket
-                    </Button>
+                  {/* Ticket Info Footer */}
+                  <Box sx={{ 
+                    p: 4, 
+                    background: 'var(--color-card-bg)',
+                    borderTop: '1px solid var(--border-color)'
+                  }}>
+                    <Grid container spacing={3} alignItems="center">
+                      <Grid item xs={12} md={6}>
+                        <Stack direction="row" spacing={2} alignItems="center">
+                          <Avatar sx={{ 
+                            width: 48, 
+                            height: 48,
+                            background: 'var(--color-primary)',
+                            fontSize: '1.2rem',
+                            fontWeight: 700
+                          }}>
+                            {currentTicket.participant?.charAt(0)?.toUpperCase() || 'G'}
+                          </Avatar>
+                          <Box>
+                            <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                              {currentTicket.participant || `Guest ${currentTicketIndex + 1}`}
+                            </Typography>
+                            <Stack direction="row" spacing={1} alignItems="center">
+                              <Chip 
+                                label={currentTicket.tierName}
+                                size="small"
+                                sx={{ 
+                                  background: 'var(--color-success)',
+                                  color: 'white',
+                                  fontWeight: 600
+                                }}
+                              />
+                              {currentTicket.seat && (
+                                <Typography variant="body2" sx={{ color: 'var(--color-text-secondary)' }}>
+                                  Seat: {currentTicket.seat}
+                                </Typography>
+                              )}
+                            </Stack>
+                          </Box>
+                        </Stack>
+                      </Grid>
+                      
+                      <Grid item xs={12} md={6}>
+                        <Stack spacing={2}>
+                          <Typography variant="body2" sx={{ 
+                            color: 'var(--color-text-secondary)',
+                            fontFamily: 'monospace',
+                            fontSize: '0.9rem',
+                            textAlign: { xs: 'left', md: 'right' }
+                          }}>
+                            Ticket ID: {currentTicket.qrcode}
+                          </Typography>
+                          
+                          <Stack direction="row" spacing={2} sx={{ justifyContent: { xs: 'flex-start', md: 'flex-end' } }}>
+                            <Button
+                              variant="contained"
+                              startIcon={<Download />}
+                              onClick={() => currentTicket.qrcodeUrl && downloadTicket(
+                                currentTicket.qrcodeUrl, 
+                                `ticket_${currentTicket.participant?.replace(/\s+/g, '_') || `guest_${currentTicketIndex + 1}`}.png`
+                              )}
+                              disabled={!currentTicket.qrcodeUrl}
+                              sx={{
+                                borderRadius: '50px',
+                                background: 'var(--gradient-primary)',
+                                px: 3,
+                                fontWeight: 600,
+                                '&:hover': {
+                                  transform: 'translateY(-2px)',
+                                  boxShadow: 'var(--shadow-lg)'
+                                }
+                              }}
+                            >
+                              Download
+                            </Button>
+                            
+                            <Button
+                              variant="outlined"
+                              startIcon={<Share />}
+                              onClick={shareOrder}
+                              sx={{
+                                borderRadius: '50px',
+                                borderColor: 'var(--color-primary)',
+                                color: 'var(--color-primary)',
+                                px: 3,
+                                fontWeight: 600
+                              }}
+                            >
+                              Share
+                            </Button>
+                          </Stack>
+                        </Stack>
+                      </Grid>
+                    </Grid>
 
                     {/* Pagination */}
                     {tickets.length > 1 && (
-                      <Box sx={{ mt: 3, display: 'flex', justifyContent: 'center' }}>
+                      <Box sx={{ mt: 4, display: 'flex', justifyContent: 'center' }}>
                         <Pagination 
                           count={tickets.length}
                           page={currentTicketIndex + 1}
                           onChange={(e, page) => setCurrentTicketIndex(page - 1)}
                           color="primary"
-                          size="small"
+                          size="large"
+                          sx={{
+                            '& .MuiPaginationItem-root': {
+                              fontSize: '1rem',
+                              fontWeight: 600
+                            }
+                          }}
                         />
                       </Box>
                     )}
-                  </CardContent>
-                </Card>
-              )}
+                  </Box>
+                </CardContent>
+              </Card>
+            )}
+          </Grid>
 
-              {/* Order Summary - Centered */}
+          {/* Right Side - Order Summary & Actions */}
+          <Grid item xs={12} lg={4}>
+            <Stack spacing={4}>
+              {/* Quick Actions Card */}
+              <Card sx={{ 
+                borderRadius: 4,
+                background: 'var(--color-card-bg)',
+                border: '1px solid var(--border-color)',
+                boxShadow: 'var(--shadow-lg)'
+              }}>
+                <CardContent sx={{ p: 4 }}>
+                  <Typography variant="h6" sx={{ 
+                    fontFamily: 'var(--font-heading)',
+                    fontWeight: 700,
+                    color: 'var(--color-text)',
+                    mb: 3
+                  }}>
+                    Quick Actions
+                  </Typography>
+
+                  <Stack spacing={3}>
+                    <Button
+                      variant="contained"
+                      fullWidth
+                      size="large"
+                      startIcon={downloading ? <CircularProgress size={20} color="inherit" /> : <GetApp />}
+                      onClick={downloadAllTickets}
+                      disabled={downloading}
+                      sx={{
+                        py: 2,
+                        borderRadius: '50px',
+                        background: 'var(--gradient-primary)',
+                        fontSize: '1.1rem',
+                        fontWeight: 700,
+                        '&:hover': {
+                          transform: 'translateY(-2px)',
+                          boxShadow: 'var(--shadow-xl)'
+                        }
+                      }}
+                    >
+                      {downloading ? 'Downloading All...' : `Download All ${tickets.length} Tickets`}
+                    </Button>
+                    
+                    <Button
+                      variant="outlined"
+                      fullWidth
+                      size="large"
+                      startIcon={<Home />}
+                      onClick={() => navigate('/events')}
+                      sx={{
+                        py: 2,
+                        borderRadius: '50px',
+                        borderColor: 'var(--color-primary)',
+                        color: 'var(--color-primary)',
+                        fontSize: '1rem',
+                        fontWeight: 600,
+                        '&:hover': {
+                          background: 'var(--color-primary)',
+                          color: 'white',
+                          transform: 'translateY(-2px)'
+                        }
+                      }}
+                    >
+                      Browse More Events
+                    </Button>
+                  </Stack>
+                </CardContent>
+              </Card>
+
+              {/* All Tickets List */}
+              <Card sx={{ 
+                borderRadius: 4,
+                background: 'var(--color-card-bg)',
+                border: '1px solid var(--border-color)'
+              }}>
+                <CardContent sx={{ p: 4 }}>
+                  <Typography variant="h6" sx={{ 
+                    fontFamily: 'var(--font-heading)',
+                    fontWeight: 700,
+                    color: 'var(--color-text)',
+                    mb: 3
+                  }}>
+                    All Tickets ({tickets.length})
+                  </Typography>
+
+                  <Stack spacing={2}>
+                    {tickets.map((ticket, index) => (
+                      <Card 
+                        key={ticket._id}
+                        onClick={() => setCurrentTicketIndex(index)}
+                        sx={{ 
+                          p: 3,
+                          cursor: 'pointer',
+                          borderRadius: 3,
+                          border: currentTicketIndex === index 
+                            ? '2px solid var(--color-primary)' 
+                            : '1px solid var(--border-color)',
+                          background: currentTicketIndex === index 
+                            ? 'var(--color-primary)05' 
+                            : 'var(--color-bg)',
+                          transition: 'all 0.3s ease',
+                          '&:hover': {
+                            borderColor: 'var(--color-primary)',
+                            transform: 'translateY(-2px)',
+                            boxShadow: 'var(--shadow-md)'
+                          }
+                        }}
+                      >
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                          <Avatar sx={{ 
+                            width: 48, 
+                            height: 48,
+                            background: currentTicketIndex === index 
+                              ? 'var(--color-primary)' 
+                              : 'var(--color-text-secondary)',
+                            fontWeight: 700,
+                            fontSize: '1.1rem'
+                          }}>
+                            {index + 1}
+                          </Avatar>
+                          <Box sx={{ flex: 1 }}>
+                            <Typography variant="body1" sx={{ 
+                              fontWeight: 700,
+                              color: 'var(--color-text)',
+                              mb: 0.5
+                            }}>
+                              {ticket.participant || `Guest ${index + 1}`}
+                            </Typography>
+                            <Chip 
+                              label={ticket.tierName}
+                              size="small"
+                              sx={{
+                                fontSize: '0.75rem',
+                                background: currentTicketIndex === index 
+                                  ? 'var(--color-primary)' 
+                                  : 'var(--color-text-secondary)',
+                                color: 'white'
+                              }}
+                            />
+                          </Box>
+                          {ticket.qrcodeUrl && (
+                            <CheckCircle sx={{ 
+                              color: 'var(--color-success)',
+                              fontSize: 24
+                            }} />
+                          )}
+                        </Box>
+                      </Card>
+                    ))}
+                  </Stack>
+                </CardContent>
+              </Card>
+
+              {/* Order Summary */}
               <Card sx={{ 
                 borderRadius: 4,
                 background: 'var(--color-card-bg)',
@@ -525,61 +654,89 @@ export default function TicketSuccess() {
                     fontWeight: 700,
                     color: 'var(--color-text)',
                     mb: 3,
-                    textAlign: 'center'
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1
                   }}>
+                    <Receipt />
                     Order Summary
                   </Typography>
 
                   {/* Event Info */}
-                  <Box sx={{ mb: 3, p: 3, borderRadius: 2, background: 'var(--color-bg-secondary)', textAlign: 'center' }}>
-                    <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
+                  <Paper sx={{ 
+                    p: 3, 
+                    mb: 3, 
+                    borderRadius: 3, 
+                    background: 'linear-gradient(45deg, #667eea, #764ba2)',
+                    color: 'white'
+                  }}>
+                    <Typography variant="h6" sx={{ fontWeight: 700, mb: 2 }}>
                       {order?.eventId?.name}
                     </Typography>
-                    <Typography variant="body2" sx={{ color: 'var(--color-text-secondary)', mb: 1 }}>
-                      {order?.eventId?.start_date && format(new Date(order.eventId.start_date), 'MMM d, yyyy')}
+                    <Stack spacing={1}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <CalendarToday sx={{ fontSize: 16 }} />
+                        <Typography variant="body2">
+                          {order?.eventId?.start_date && format(new Date(order.eventId.start_date), 'MMM d, yyyy')}
+                        </Typography>
+                      </Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <LocationOn sx={{ fontSize: 16 }} />
+                        <Typography variant="body2">
+                          {order?.eventId?.location}
+                        </Typography>
+                      </Box>
+                    </Stack>
+                  </Paper>
+
+                  {/* Customer Info */}
+                  <Box sx={{ mb: 3 }}>
+                    <Typography variant="subtitle2" sx={{ 
+                      fontWeight: 600, 
+                      color: 'var(--color-text-secondary)',
+                      mb: 2 
+                    }}>
+                      Customer Details
                     </Typography>
-                    <Typography variant="body2" sx={{ color: 'var(--color-text-secondary)' }}>
-                      {order?.eventId?.location}
-                    </Typography>
+                    <Stack spacing={2}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                        <Person sx={{ color: 'var(--color-primary)' }} />
+                        <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                          {order?.customerName}
+                        </Typography>
+                      </Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                        <Email sx={{ color: 'var(--color-primary)' }} />
+                        <Typography variant="body2">
+                          {order?.customerEmail}
+                        </Typography>
+                      </Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                        <Phone sx={{ color: 'var(--color-primary)' }} />
+                        <Typography variant="body2">
+                          {order?.customerPhone}
+                        </Typography>
+                      </Box>
+                    </Stack>
                   </Box>
 
                   <Divider sx={{ my: 3 }} />
 
-                  {/* Customer Info */}
-                  <Stack spacing={2} sx={{ mb: 3, textAlign: 'center' }}>
-                    <Box>
-                      <Typography variant="caption" sx={{ color: 'var(--color-text-secondary)' }}>
-                        Customer Name
-                      </Typography>
-                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                        {order?.customerName}
-                      </Typography>
-                    </Box>
-                    <Box>
-                      <Typography variant="caption" sx={{ color: 'var(--color-text-secondary)' }}>
-                        Email
-                      </Typography>
-                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                        {order?.customerEmail}
-                      </Typography>
-                    </Box>
-                  </Stack>
-
-                  <Divider sx={{ my: 3 }} />
-
                   {/* Payment Summary */}
-                  <Stack spacing={1} sx={{ mb: 3 }}>
+                  <Stack spacing={2}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <Typography variant="body2">Subtotal:</Typography>
-                      <Typography variant="body2">₹{order?.originalAmount?.toLocaleString()}</Typography>
+                      <Typography variant="body1">Subtotal:</Typography>
+                      <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                        ₹{order?.originalAmount?.toLocaleString()}
+                      </Typography>
                     </Box>
                     
                     {order?.discountAmount > 0 && (
                       <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <Typography variant="body2" sx={{ color: 'var(--color-success)' }}>
+                        <Typography variant="body1" sx={{ color: 'var(--color-success)' }}>
                           Discount:
                         </Typography>
-                        <Typography variant="body2" sx={{ color: 'var(--color-success)' }}>
+                        <Typography variant="body1" sx={{ color: 'var(--color-success)', fontWeight: 600 }}>
                           -₹{order.discountAmount.toLocaleString()}
                         </Typography>
                       </Box>
@@ -598,85 +755,36 @@ export default function TicketSuccess() {
                         ₹{order?.totalAmount?.toLocaleString()}
                       </Typography>
                     </Box>
+                    
+                    <Typography variant="caption" sx={{ 
+                      color: 'var(--color-text-secondary)',
+                      fontFamily: 'monospace',
+                      textAlign: 'center',
+                      mt: 2
+                    }}>
+                      Order #{orderId?.slice(-12).toUpperCase()}
+                    </Typography>
                   </Stack>
-
-                  <Typography variant="caption" sx={{ 
-                    display: 'block',
-                    textAlign: 'center',
-                    color: 'var(--color-text-secondary)',
-                    fontFamily: 'monospace'
-                  }}>
-                    Order ID: {orderId?.slice(-12).toUpperCase()}
-                  </Typography>
                 </CardContent>
               </Card>
-            </Stack>
-          </Grid>
 
-          {/* Right Sidebar - Actions */}
-          <Grid item xs={12} md={3}>
-            <Card sx={{ 
-              borderRadius: 4,
-              background: 'var(--color-card-bg)',
-              border: '1px solid var(--border-color)',
-              height: 'fit-content',
-              position: 'sticky',
-              top: 24
-            }}>
-              <CardContent sx={{ p: 3 }}>
-                <Typography variant="h6" sx={{ 
-                  fontFamily: 'var(--font-heading)',
-                  fontWeight: 700,
-                  color: 'var(--color-text)',
-                  mb: 3,
-                  textAlign: 'center'
-                }}>
-                  Quick Actions
+              {/* Important Notice */}
+              <Alert 
+                severity="info" 
+                sx={{ 
+                  borderRadius: 3,
+                  fontSize: '0.9rem',
+                  '& .MuiAlert-message': {
+                    fontWeight: 500
+                  }
+                }}
+              >
+                <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
+                  Important Notice:
                 </Typography>
-
-                <Stack spacing={2}>
-                  <Button
-                    variant="outlined"
-                    fullWidth
-                    startIcon={<Share />}
-                    onClick={shareOrder}
-                    sx={{
-                      borderColor: 'var(--color-primary)',
-                      color: 'var(--color-primary)',
-                      '&:hover': {
-                        borderColor: 'var(--color-primary)',
-                        background: 'var(--color-primary)',
-                        color: 'white'
-                      }
-                    }}
-                  >
-                    Share Order
-                  </Button>
-                  
-                  <Button
-                    variant="contained"
-                    fullWidth
-                    startIcon={<Home />}
-                    onClick={() => navigate('/events')}
-                    sx={{
-                      background: 'var(--gradient-primary)',
-                      '&:hover': {
-                        background: 'var(--gradient-primary)',
-                        transform: 'translateY(-2px)'
-                      }
-                    }}
-                  >
-                    Browse Events
-                  </Button>
-                </Stack>
-
-                <Alert severity="info" sx={{ mt: 3, borderRadius: 2, fontSize: '0.85rem' }}>
-                  <Typography variant="caption">
-                    <strong>Important:</strong> Save your tickets and bring them to the event. Each QR code will be scanned for entry.
-                  </Typography>
-                </Alert>
-              </CardContent>
-            </Card>
+                Save your tickets and bring them to the event. Each QR code will be scanned for entry verification.
+              </Alert>
+            </Stack>
           </Grid>
         </Grid>
       </Container>

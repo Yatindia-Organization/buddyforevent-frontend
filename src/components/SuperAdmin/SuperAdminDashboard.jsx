@@ -91,6 +91,13 @@ export default function SuperAdminDashboard() {
       setLoading(false);
     }
   };
+    const handleLogout = () => {
+    localStorage.clear();
+    context.changeLoginFlow(false);
+    context.changeUserId(null);
+    context.changeUserType(null);
+    navigate("/login");
+  };
 
   const quickActions = [
     { label: 'Manage Users', icon: <People />, path: '/super-admin/users', color: '#6366f1' },
@@ -215,6 +222,12 @@ export default function SuperAdminDashboard() {
                 backdropFilter: 'blur(10px)'
               }}
             />
+                    <button
+        onClick={handleLogout}
+        className="mt-6 w-1/6 bg-red-600 hover:bg-red-700 text-white py-2 rounded"
+      >
+        Logout
+      </button>
           </Box>
         </Container>
       </Box>

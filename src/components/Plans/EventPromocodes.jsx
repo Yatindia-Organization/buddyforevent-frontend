@@ -67,10 +67,11 @@ export default function EventPromocodes() {
   const { theme } = useTheme();
   const { userType, userId } = useGlobalInfo();
   const navigate = useNavigate();
-  
+
   const [promocodes, setPromocodes] = useState([]);
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [openDialog, setOpenDialog] = useState(false);
   const [dialogType, setDialogType] = useState('create');
   const [selectedPromocode, setSelectedPromocode] = useState(null);
@@ -83,7 +84,7 @@ export default function EventPromocodes() {
     totalSavings: 0,
     eventBreakdown: []
   });
-  
+
   const [formData, setFormData] = useState({
     code: '',
     type: 'ticket',
@@ -123,12 +124,12 @@ export default function EventPromocodes() {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await response.json();
-      
+
       // Filter only ticket promocodes created by this user
-      const userPromocodes = Array.isArray(data) ? 
-        data.filter(p => p.type === 'ticket' && p.createdBy === userId) : 
+      const userPromocodes = Array.isArray(data) ?
+        data.filter(p => p.type === 'ticket' && p.createdBy === userId) :
         [];
-      
+
       setPromocodes(userPromocodes);
       calculateStats(userPromocodes);
     } catch (error) {
@@ -144,7 +145,7 @@ export default function EventPromocodes() {
     const activePromocodes = promocodeList.filter(p => p.active).length;
     const totalUsage = promocodeList.reduce((sum, p) => sum + (p.usedCount || 0), 0);
     const totalSavings = promocodeList.reduce((sum, p) => sum + (p.usedCount || 0) * (p.discount || 0), 0);
-    
+
     // Event breakdown
     const eventBreakdown = events.map(event => {
       const eventPromocodes = promocodeList.filter(p => p.eventId === event._id);
@@ -166,12 +167,16 @@ export default function EventPromocodes() {
     });
   };
 
+  // In the handleCreatePromocode function:
   const handleCreatePromocode = async () => {
+    setError(''); // Add error state if not already present
+
     try {
       const token = localStorage.getItem('token');
-      
+
       const promocodeData = {
         ...formData,
+        type: 'ticket', // Force ticket type for event admins
         createdBy: userId,
         expiresAt: formData.expiresAt ? new Date(formData.expiresAt) : null
       };
@@ -184,20 +189,33 @@ export default function EventPromocodes() {
         },
         body: JSON.stringify(promocodeData)
       });
-      
+
+      const data = await response.json();
+
       if (response.ok) {
         fetchEventPromocodes();
         handleCloseDialog();
+      } else {
+        // Handle the new error messages from your updated controller
+        if (data.error && data.error.includes('already exists for this event')) {
+          setError(`Promocode "${formData.code}" is already active for this event. Please choose a different code or wait for the existing one to expire.`);
+        } else if (data.details && Array.isArray(data.details)) {
+          setError(`Validation Error: ${data.details.join(', ')}`);
+        } else {
+          setError(data.error || 'Failed to create promocode');
+        }
       }
     } catch (error) {
       console.error('Error creating promocode:', error);
+      setError('Network error. Please try again.');
     }
   };
-
   const handleUpdatePromocode = async () => {
+    setError(''); // Clear previous errors
+
     try {
       const token = localStorage.getItem('token');
-      
+
       const promocodeData = {
         ...formData,
         expiresAt: formData.expiresAt ? new Date(formData.expiresAt) : null
@@ -211,13 +229,25 @@ export default function EventPromocodes() {
         },
         body: JSON.stringify(promocodeData)
       });
-      
+
+      const data = await response.json();
+
       if (response.ok) {
         fetchEventPromocodes();
         handleCloseDialog();
+      } else {
+        // Handle errors similar to create
+        if (data.error && data.error.includes('already exists for this event')) {
+          setError(`Promocode "${formData.code}" is already active for this event. Please choose a different code or wait for the existing one to expire.`);
+        } else if (data.details && Array.isArray(data.details)) {
+          setError(`Validation Error: ${data.details.join(', ')}`);
+        } else {
+          setError(data.error || 'Failed to update promocode');
+        }
       }
     } catch (error) {
       console.error('Error updating promocode:', error);
+      setError('Network error. Please try again.');
     }
   };
 
@@ -229,7 +259,7 @@ export default function EventPromocodes() {
           method: 'DELETE',
           headers: { 'Authorization': `Bearer ${token}` }
         });
-        
+
         if (response.ok) {
           fetchEventPromocodes();
         }
@@ -240,33 +270,34 @@ export default function EventPromocodes() {
   };
 
   const handleOpenDialog = (type, promocode = null) => {
-    setDialogType(type);
-    setSelectedPromocode(promocode);
-    
-    if (promocode && (type === 'edit' || type === 'view')) {
-      setFormData({
-        code: promocode.code || '',
-        type: 'ticket',
-        discount: promocode.discount || 10,
-        maxUsage: promocode.maxUsage || 1,
-        eventId: promocode.eventId || '',
-        expiresAt: promocode.expiresAt ? format(new Date(promocode.expiresAt), 'yyyy-MM-dd') : '',
-        active: promocode.active !== undefined ? promocode.active : true
-      });
-    } else {
-      setFormData({
-        code: '',
-        type: 'ticket',
-        discount: 10,
-        maxUsage: 1,
-        eventId: '',
-        expiresAt: '',
-        active: true
-      });
-    }
-    
-    setOpenDialog(true);
-  };
+  setError(''); // Clear any previous errors
+  setDialogType(type);
+  setSelectedPromocode(promocode);
+
+  if (promocode && (type === 'edit' || type === 'view')) {
+    setFormData({
+      code: promocode.code || '',
+      type: 'ticket',
+      discount: promocode.discount || 10,
+      maxUsage: promocode.maxUsage || 1,
+      eventId: promocode.eventId || '',
+      expiresAt: promocode.expiresAt ? format(new Date(promocode.expiresAt), 'yyyy-MM-dd') : '',
+      active: promocode.active !== undefined ? promocode.active : true
+    });
+  } else {
+    setFormData({
+      code: '',
+      type: 'ticket',
+      discount: 10,
+      maxUsage: 1,
+      eventId: '',
+      expiresAt: '',
+      active: true
+    });
+  }
+
+  setOpenDialog(true);
+};
 
   const handleCloseDialog = () => {
     setOpenDialog(false);
@@ -299,12 +330,12 @@ export default function EventPromocodes() {
     return event ? event.name : 'Unknown Event';
   };
 
-  const filteredPromocodes = selectedEvent === 'all' ? 
-    promocodes : 
+  const filteredPromocodes = selectedEvent === 'all' ?
+    promocodes :
     promocodes.filter(p => p.eventId === selectedEvent);
 
   const StatCard = ({ title, value, icon, color, subtitle }) => (
-    <Card sx={{ 
+    <Card sx={{
       borderRadius: 3,
       border: '1px solid var(--border-color)',
       background: 'var(--color-card-bg)',
@@ -315,7 +346,7 @@ export default function EventPromocodes() {
       transition: 'all 0.3s ease'
     }}>
       <CardContent sx={{ textAlign: 'center', py: 3 }}>
-        <Box sx={{ 
+        <Box sx={{
           width: 60,
           height: 60,
           borderRadius: '50%',
@@ -344,15 +375,15 @@ export default function EventPromocodes() {
   );
 
   return (
-    <Box sx={{ 
+    <Box sx={{
       minHeight: '100vh',
-      background: theme === 'dark' 
+      background: theme === 'dark'
         ? 'linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%)'
         : 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
       fontFamily: 'var(--font-base)'
     }}>
       {/* Header */}
-      <Box sx={{ 
+      <Box sx={{
         background: theme === 'dark'
           ? 'linear-gradient(135deg, #1e1b4b 0%, #312e81 100%)'
           : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
@@ -361,9 +392,9 @@ export default function EventPromocodes() {
         <Container maxWidth="lg">
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-              <IconButton 
+              <IconButton
                 onClick={() => navigate('/dashboard')}
-                sx={{ 
+                sx={{
                   color: 'white',
                   background: 'rgba(255,255,255,0.1)',
                   '&:hover': { background: 'rgba(255,255,255,0.2)' }
@@ -372,8 +403,8 @@ export default function EventPromocodes() {
                 <ArrowBack />
               </IconButton>
               <Box>
-                <Typography variant="h4" sx={{ 
-                  color: 'white', 
+                <Typography variant="h4" sx={{
+                  color: 'white',
                   fontFamily: 'var(--font-heading)',
                   fontWeight: 700,
                   mb: 1
@@ -408,11 +439,11 @@ export default function EventPromocodes() {
       <Container maxWidth="lg" sx={{ py: 6 }}>
         {/* Stats Cards */}
         <Grid container spacing={4} sx={{ mb: 6 }}>
-    
+
         </Grid>
 
         {/* Event Filter */}
-        <Card sx={{ 
+        <Card sx={{
           borderRadius: 4,
           background: 'var(--color-card-bg)',
           border: '1px solid var(--border-color)',
@@ -442,7 +473,7 @@ export default function EventPromocodes() {
         </Card>
 
         {/* Promocodes Table */}
-        <Card sx={{ 
+        <Card sx={{
           borderRadius: 4,
           background: 'var(--color-card-bg)',
           border: '1px solid var(--border-color)',
@@ -450,7 +481,7 @@ export default function EventPromocodes() {
         }}>
           <CardContent sx={{ p: 0 }}>
             <Box sx={{ p: 4, pb: 2 }}>
-              <Typography variant="h5" sx={{ 
+              <Typography variant="h5" sx={{
                 fontFamily: 'var(--font-heading)',
                 fontWeight: 700,
                 color: 'var(--color-text)'
@@ -461,7 +492,7 @@ export default function EventPromocodes() {
                 Discounts for public ticket purchases
               </Typography>
             </Box>
-            
+
             <TableContainer>
               <Table>
                 <TableHead>
@@ -496,8 +527,8 @@ export default function EventPromocodes() {
                             <Typography variant="body1" sx={{ fontWeight: 600, fontFamily: 'monospace' }}>
                               {promocode.code}
                             </Typography>
-                            <IconButton 
-                              size="small" 
+                            <IconButton
+                              size="small"
                               onClick={() => handleCopyCode(promocode.code)}
                               sx={{ opacity: 0.7 }}
                             >
@@ -538,17 +569,17 @@ export default function EventPromocodes() {
                             <Typography variant="body2">
                               {promocode.usedCount || 0} / {promocode.maxUsage}
                             </Typography>
-                            <LinearProgress 
-                              variant="determinate" 
-                              value={(promocode.usedCount || 0) / promocode.maxUsage * 100} 
+                            <LinearProgress
+                              variant="determinate"
+                              value={(promocode.usedCount || 0) / promocode.maxUsage * 100}
                               sx={{ width: 60, height: 4, borderRadius: 1, mt: 0.5 }}
                             />
                           </Box>
                         </TableCell>
                         <TableCell>
                           <Typography variant="body2" sx={{ color: 'var(--color-text-secondary)' }}>
-                            {promocode.expiresAt ? 
-                              format(new Date(promocode.expiresAt), 'MMM dd, yyyy') : 
+                            {promocode.expiresAt ?
+                              format(new Date(promocode.expiresAt), 'MMM dd, yyyy') :
                               'Never'
                             }
                           </Typography>
@@ -582,14 +613,14 @@ export default function EventPromocodes() {
 
         {/* Event Performance Summary */}
         {stats.eventBreakdown.length > 0 && (
-          <Card sx={{ 
+          <Card sx={{
             mt: 4,
             borderRadius: 4,
             background: 'var(--color-card-bg)',
             border: '1px solid var(--border-color)'
           }}>
             <CardContent sx={{ p: 4 }}>
-              <Typography variant="h6" sx={{ 
+              <Typography variant="h6" sx={{
                 fontFamily: 'var(--font-heading)',
                 fontWeight: 700,
                 color: 'var(--color-text)',
@@ -604,7 +635,7 @@ export default function EventPromocodes() {
               <Grid container spacing={3}>
                 {stats.eventBreakdown.slice(0, 4).map((event) => (
                   <Grid item xs={12} sm={6} md={3} key={event.eventId}>
-                    <Box sx={{ 
+                    <Box sx={{
                       p: 3,
                       background: 'var(--color-bg-subtle)',
                       borderRadius: 2,
@@ -616,9 +647,9 @@ export default function EventPromocodes() {
                       <Typography variant="body2" sx={{ color: 'var(--color-text-secondary)', mb: 2 }}>
                         {event.promocodeCount} promocodes • {event.totalUsage} uses
                       </Typography>
-                      <LinearProgress 
-                        variant="determinate" 
-                        value={Math.min((event.totalUsage / 10) * 100, 100)} 
+                      <LinearProgress
+                        variant="determinate"
+                        value={Math.min((event.totalUsage / 10) * 100, 100)}
                         sx={{ height: 6, borderRadius: 1 }}
                       />
                     </Box>
@@ -664,11 +695,18 @@ export default function EventPromocodes() {
           <DialogContent>
             <Grid container spacing={3} sx={{ mt: 1 }}>
               <Grid item xs={12} md={6}>
+                {error && (
+                  <Grid item xs={12}>
+                    <Alert severity="error" sx={{ mb: 2 }}>
+                      {error}
+                    </Alert>
+                  </Grid>
+                )}
                 <TextField
                   fullWidth
                   label="Promocode"
                   value={formData.code}
-                  onChange={(e) => setFormData({...formData, code: e.target.value.toUpperCase()})}
+                  onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
                   disabled={dialogType === 'view'}
                   placeholder="e.g. SAVE20, SUMMER2024"
                   helperText="Use uppercase letters and numbers"
@@ -679,7 +717,7 @@ export default function EventPromocodes() {
                   <InputLabel>Discount Percentage</InputLabel>
                   <Select
                     value={formData.discount}
-                    onChange={(e) => setFormData({...formData, discount: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, discount: e.target.value })}
                     disabled={dialogType === 'view'}
                     label="Discount Percentage"
                   >
@@ -695,7 +733,7 @@ export default function EventPromocodes() {
                   label="Maximum Usage"
                   type="number"
                   value={formData.maxUsage}
-                  onChange={(e) => setFormData({...formData, maxUsage: parseInt(e.target.value)})}
+                  onChange={(e) => setFormData({ ...formData, maxUsage: parseInt(e.target.value) })}
                   disabled={dialogType === 'view'}
                   helperText="How many times this code can be used"
                 />
@@ -706,7 +744,7 @@ export default function EventPromocodes() {
                   label="Expiry Date (Optional)"
                   type="date"
                   value={formData.expiresAt}
-                  onChange={(e) => setFormData({...formData, expiresAt: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, expiresAt: e.target.value })}
                   disabled={dialogType === 'view'}
                   InputLabelProps={{ shrink: true }}
                   helperText="Leave empty for no expiry"
@@ -714,14 +752,22 @@ export default function EventPromocodes() {
               </Grid>
               <Grid item xs={12}>
                 <FormControl fullWidth>
-                  <InputLabel>Event (Optional)</InputLabel>
+                  <InputLabel shrink>Event (Optional)</InputLabel>
                   <Select
                     value={formData.eventId}
-                    onChange={(e) => setFormData({...formData, eventId: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, eventId: e.target.value })}
                     disabled={dialogType === 'view'}
                     label="Event (Optional)"
+                    displayEmpty
+                    renderValue={(value) => {
+                      if (!value) return <em>Select an event or leave empty for all events</em>;
+                      const event = events.find(e => e._id === value);
+                      return event ? event.name : 'Unknown Event';
+                    }}
                   >
-                    <MenuItem value="">All Your Events</MenuItem>
+                    <MenuItem value="">
+                      <em>All Your Events</em>
+                    </MenuItem>
                     {events.map(event => (
                       <MenuItem key={event._id} value={event._id}>
                         {event.name}
@@ -735,7 +781,7 @@ export default function EventPromocodes() {
                   control={
                     <Switch
                       checked={formData.active}
-                      onChange={(e) => setFormData({...formData, active: e.target.checked})}
+                      onChange={(e) => setFormData({ ...formData, active: e.target.checked })}
                       disabled={dialogType === 'view'}
                     />
                   }
@@ -756,8 +802,8 @@ export default function EventPromocodes() {
               {dialogType === 'view' ? 'Close' : 'Cancel'}
             </Button>
             {dialogType !== 'view' && (
-              <Button 
-                variant="contained" 
+              <Button
+                variant="contained"
                 onClick={dialogType === 'create' ? handleCreatePromocode : handleUpdatePromocode}
               >
                 {dialogType === 'create' ? 'Create Promocode' : 'Update Promocode'}
